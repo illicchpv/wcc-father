@@ -1,0 +1,297 @@
+// | Имя сниппета             | prefix          | scope      | описание                                   |
+// |--------------------------|-----------------|------------|--------------------------------------------|
+// | WCC Component Class      | wcc=class       | javascript | Полный класс компонента BaseComponent      |
+// | WCC Properties           | wcc=props       | javascript | Блок static get properties                 |
+// | WCC Property Item        | wcc=prop-item   | javascript | Одно свойство в блоке properties           |
+// | WCC Setup Event Listeners| wcc=events      | javascript | Настройка слушателей (onRef + emit)        |
+// | WCC Render List          | wcc=list        | javascript | Рендер списка (полный цикл)                |
+// | WCC Static Template      | wcc=static-tpl  | javascript | static get template()                      |
+// | WCC HTML Skeleton        | wcc=html        | html       | Каркас HTML + style для компонента         |
+// | WCC Cache DOM            | wcc=cache       | javascript | Кэширование DOM (_cacheElements)           |
+// | WCC Watch Property       | wcc=watch       | javascript | Реактивность (propertyChangedCallback)     |
+// | WCC All Ready            | wcc=ready       | javascript | Хук готовности (onAllComponentsReady)      |
+// | WCC Fetch Data           | wcc=fetch       | javascript | Асинхронная загрузка (fetch)               |
+// | WCC Inner Template HTML  | wcc=inner-html  | html       | Блок innerTemplate в HTML                  |
+// | WCC Conditional HTML     | wcc=if          | html       | Условный блок if/endif                     |
+// | WCC Include Block        | wcc=include     | html       | Блок include для интерполяции              |
+// | WCC Slot Named           | wcc=slot        | html       | Именованный слот                           |
+// | WCC Slot Default         | wcc=slot-def    | html       | Слот по умолчанию                          |
+// | WCC Value Interpolation  | wcc=val         | html       | Интерполяция ${this.prop}                  |
+{
+  "WCC Component Class": {
+    "prefix": "wcc=class",
+    "scope": "javascript",
+    "body": [
+      "// подключить: <script data-wcc type=\"module\" src=\"wcc/${TM_FILENAME_BASE}/${TM_FILENAME_BASE}.js\"></script>",
+      "// ",
+      "export class ${TM_FILENAME_BASE} extends BaseComponent {",
+      "  constructor() {",
+      "    super(); this._refs = {};",
+      "  }",
+      "  connectedCallback() {",
+      "    this.loadTemplate(import.meta.url);",
+      "  }",
+      "  static get properties() {",
+      "    return {",
+      "      // counterValue: {type: Number, attribute: 'counter-value', default: 0},",
+      "    };",
+      "  }",
+      "",
+      "  render() {",
+      "    super.render();",
+      "    // this._initView();       // <--- Раскомментировать для Шага 2",
+      "    // this._initListeners();  // <--- Раскомментировать для Шага 3",
+      "  }",
+      "",
+      "  // ============================================================",
+      "  // Шаг 2: Кэширование и обновление отображения",
+      "  // ============================================================",
+      "  ",
+      "  // _initView() {",
+      "  //   this._cacheElements();",
+      "  //   this.updateView();",
+      "  // }",
+      "",
+      "  // _cacheElements() {",
+      "  //   this._refs = {",
+      "  //     value: this.querySelector('.counter-value'),",
+      "  //     btnInc: this.querySelector('.counter-inc'),",
+      "  //   };",
+      "  // }",
+      "",
+      "  // updateView() {",
+      "  //   const {value} = this._refs;",
+      "  //   if (!value) return;",
+      "  //   value.textContent = this.counterValue;",
+      "  // }",
+      "",
+      "  // propertyChangedCallback(name, oldValue, newValue) {",
+      "  //   if (this.html) {",
+      "  //     this.updateView();",
+      "  //   }",
+      "  // }",
+      "",
+      "  // ============================================================",
+      "  // Шаг 3: Обработчики событий",
+      "  // ============================================================",
+      "",
+      "  // _initListeners() {",
+      "  //   this.onRef('btnInc', 'click', (e) => {",
+      "  //     this.counterValue++;",
+      "  //     this.emit('event-name', {...this.values, component: this, event: e, });",
+      "  //   });",
+      "  // }",
+      "}",
+      "",
+      "BaseComponent.registerWcc(${TM_FILENAME_BASE}, import.meta.url);"
+    ],
+    "description": "Полный класс компонента BaseComponent (с закомментированными примерами)"
+  },
+  "WCC HTML Skeleton": {
+    "prefix": "wcc=html",
+    "scope": "html",
+    "body": [
+      "<style>",
+      "  /* :host { display: block; } */",
+      "  .${TM_FILENAME_BASE/^([A-Z])(.*)/${1:/downcase}$2/} {",
+      "    ",
+      "  }",
+      "</style>",
+      "<div class=\"${TM_FILENAME_BASE/^([A-Z])(.*)/${1:/downcase}$2/}\">",
+      "  ${TM_FILENAME_BASE/^([A-Z])(.*)/${1:/downcase}$2/}",
+      "</div>"
+    ],
+    "description": "Каркас HTML для компонента"
+  },
+  "WCC Properties": {
+    "prefix": "wcc=props",
+    "scope": "javascript",
+    "body": [
+      "static get properties() {",
+      "  return {",
+      "    ${1:propName}: {",
+      "      type: ${2|String,Number,Boolean|},",
+      "      attribute: '${3:attribute-name}',",
+      "      default: ${4:null}",
+      "    }",
+      "  };",
+      "}"
+    ],
+    "description": "Блок свойств static get properties"
+  },
+  "WCC Property Item": {
+    "prefix": "wcc=prop-item",
+    "scope": "javascript",
+    "body": [
+      "${1:propName}: {",
+      "  type: ${2|String,Number,Boolean|},",
+      "  attribute: '${3:attribute-name}',",
+      "  default: ${4:null}",
+      "},"
+    ],
+    "description": "Одно свойство для блока properties"
+  },
+  "WCC Setup Event Listeners": {
+    "prefix": "wcc=events",
+    "scope": "javascript",
+    "body": [
+      "_setupEventListeners() {",
+      "  this.onRef('${1:refName}', '${2:click}', (e) => {",
+      "    this.emit('${3:event-name}', {",
+      "      ${4:data}: this.${5:value},",
+      "      component: this,",
+      "      event: e,",
+      "    });",
+      "  });",
+      "}"
+    ],
+    "description": "Настройка слушателей событий (onRef + emit)"
+  },
+  "WCC Render List": {
+    "prefix": "wcc=list",
+    "scope": "javascript",
+    "body": [
+      "_processInnerTemplates(name, content) {",
+      "  if (name === '${1:item-template}') {",
+      "    this._${1}Template = content;",
+      "    this._render${2:Items}();",
+      "  }",
+      "}",
+      "",
+      "_${3:renderItems}() {",
+      "  if (!this.${4:items} || !this._${1}Template) return;",
+      "  const container = this.querySelector('.${5:container-class}');",
+      "  if (!container) return;",
+      "  this.renderInnerTemplateList(this.${4}, this._${1}Template, container);",
+      "}"
+    ],
+    "description": "Рендер списка через innerTemplate (полный цикл)"
+  },
+  "WCC Static Template": {
+    "prefix": "wcc=static-tpl",
+    "scope": "javascript",
+    "body": [
+      "static get template() {",
+      "  return `",
+      "    <style>",
+      "      :host { display: block; }",
+      "      .${1:component} { }",
+      "    </style>",
+      "    <div class=\"$1\">",
+      "      $0",
+      "    </div>",
+      "  `;",
+      "}"
+    ],
+    "description": "Статический шаблон (static get template)"
+  },
+  "WCC Inner Template HTML": {
+    "prefix": "wcc=inner-html",
+    "scope": "html",
+    "body": [
+      "<!-- innerTemplate:${1:inner-template-name} -->",
+      "<div class=\"class-name\">",
+      "  $0",
+      "</div>",
+      "<!-- /innerTemplate -->"
+    ],
+    "description": "Блок внутреннего шаблона (innerTemplate)"
+  },
+  "WCC Conditional HTML": {
+    "prefix": "wcc=if",
+    "scope": "html",
+    "body": [
+      "<!-- if(this.${1:propName}==='${2:value}') -->",
+      "  $0",
+      "<!-- endif -->"
+    ],
+    "description": "Условный блок (if/endif)"
+  },
+  "WCC Include Block": {
+    "prefix": "wcc=include",
+    "scope": "html",
+    "body": [
+      "<!-- include -->",
+      "  $0",
+      "<!-- /include -->"
+    ],
+    "description": "Блок include для интерполяции (${this.prop})"
+  },
+  "WCC Cache DOM": {
+    "prefix": "wcc=cache",
+    "scope": "javascript",
+    "body": [
+      "_cacheElements() {",
+      "  this._refs = {",
+      "    ${1:elementName}: this.querySelector('.${2:selector}'),",
+      "    $0",
+      "  };",
+      "}"
+    ],
+    "description": "Кэширование DOM элементов в this._refs"
+  },
+  "WCC Watch Property": {
+    "prefix": "wcc=watch",
+    "scope": "javascript",
+    "body": [
+      "propertyChangedCallback(name, oldValue, newValue) {",
+      "  super.propertyChangedCallback(name, oldValue, newValue);",
+      "  if (name === '${1:propName}') {",
+      "    this._update${2:Feature}();",
+      "  }",
+      "}"
+    ],
+    "description": "Реакция на изменение свойств"
+  },
+  "WCC All Ready": {
+    "prefix": "wcc=ready",
+    "scope": "javascript",
+    "body": [
+      "onAllComponentsReady() {",
+      "  $0",
+      "}"
+    ],
+    "description": "Хук готовности всех компонентов"
+  },
+  "WCC Fetch Data": {
+    "prefix": "wcc=fetch",
+    "scope": "javascript",
+    "body": [
+      "async _fetch${1:Data}() {",
+      "  try {",
+      "    const response = await fetch('${2:api/endpoint}');",
+      "    if (!response.ok) throw new Error(response.statusText);",
+      "    const data = await response.json();",
+      "    this.${3:items} = data;",
+      "  } catch (err) {",
+      "    console.error('Failed to fetch ${1}:', err);",
+      "  }",
+      "}"
+    ],
+    "description": "Асинхронная загрузка данных"
+  },
+  "WCC Slot Named": {
+    "prefix": "wcc=slot",
+    "scope": "html",
+    "body": [
+      "<slot name=\"${1:slotName}\"></slot>"
+    ],
+    "description": "Именованный слот"
+  },
+  "WCC Slot Default": {
+    "prefix": "wcc=slot-def",
+    "scope": "html",
+    "body": [
+      "<slot></slot>"
+    ],
+    "description": "Слот по умолчанию"
+  },
+  "WCC Value Interpolation": {
+    "prefix": "wcc=val",
+    "scope": "html",
+    "body": [
+      "\\${this.${1:propName}}"
+    ],
+    "description": "Интерполяция значения"
+  }
+}
