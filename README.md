@@ -53,13 +53,19 @@ wcc-github/
    git clone https://github.com/illicchpv/wcc-father .
    ```
    
-3. Откройте проект в VS Code:
+3. удалите папку .git:
+   
+   ```sh
+   rm -rf .git
+   ```
+   
+4. Откройте проект в VS Code:
    
    ```sh
    code .
    ```
    
-4. Запустите локальный сервер:
+5. Запустите локальный сервер:
    - Установите расширение **Live Server** для VS Code (если не установлено).
    - Нажмите кнопку **Go Live** в правом нижнем углу окна VS Code или кликните правой кнопкой мыши по `index.html` и выберите **Open with Live Server**.
 
