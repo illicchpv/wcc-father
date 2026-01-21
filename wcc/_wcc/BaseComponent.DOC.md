@@ -1,4 +1,4 @@
-# BaseComponent — базовый класс для Web Components
+# BaseComponent — базовый класс для Light DOM Web Components
 
 Этот класс расширяет `HTMLElement` и добавляет:
 - декларативные свойства;

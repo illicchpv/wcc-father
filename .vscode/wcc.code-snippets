@@ -23,7 +23,7 @@
     "scope": "javascript",
     "body": [
       "// подключить: <script data-wcc type=\"module\" src=\"wcc/${TM_FILENAME_BASE}/${TM_FILENAME_BASE}.js\"></script>",
-      "const myTemplate = ``;",
+      "const myTemplate = ``; // для продакшена, вставить сюда содержимое файла ${TM_FILENAME_BASE}.html",
       "//",
       "export class ${TM_FILENAME_BASE} extends BaseComponent {",
       "  constructor() {",
@@ -93,7 +93,6 @@
     "scope": "html",
     "body": [
       "<style>",
-      "  /* :host { display: block; } */",
       "  .${TM_FILENAME_BASE/^([A-Z])(.*)/${1:/downcase}$2/} {",
       "    ",
       "  }",
