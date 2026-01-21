@@ -1,0 +1,26 @@
+:root {
+  --font-family: sans-serif;
+  --container-w: 870px;
+  --container-x-padding: 10px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+body {
+  font-family: var(--font-family);
+}
+li {
+  list-style: none;
+}
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.container {
+  max-width: calc(var(--container-w) + 2 * var(--container-x-padding));
+  padding-inline: var(--container-x-padding);
+  width: 100%;
+  margin-inline: auto;
+}
