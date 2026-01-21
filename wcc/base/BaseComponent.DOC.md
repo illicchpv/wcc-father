@@ -21,6 +21,11 @@
 ```html
 <script type="module" src="wcc/base/BaseComponent.js"></script>
 ```
+либо с github page
+
+```html
+<script type="module" src="https://illicchpv.github.io/wcc-father/wcc/base/BaseComponent.js"></script>
+```
 
 ## 1. Декларативные свойства (`static get properties`)
 
