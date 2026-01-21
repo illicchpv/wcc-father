@@ -23,10 +23,10 @@ wcc-github/
 │   └── main.js
 ├── wcc/
 │   ├── base/
-│   │   ├── BaseComponent.DOC.md
-│   │   ├── BaseComponent.DOCshort.md
+│   │   ├── [BaseComponent.DOC.md](https://illicchpv.github.io/wcc-father/wcc/base/BaseComponent.DOC.md)
+│   │   ├── [BaseComponent.DOCshort.md](https://illicchpv.github.io/wcc-father/wcc/base/BaseComponent.DOCshort.md)
 │   │   ├── BaseComponent.js
-│   │   ├── BuildComponentPlan.DOC.md
+│   │   ├── [BuildComponentPlan.DOC.md](https://illicchpv.github.io/wcc-father/wcc/base/BuildComponentPlan.DOC.md)
 │   │   └── minify.js
 │   ├── WccContent/
 │   │   ├── WccContent.html
