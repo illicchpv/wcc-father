@@ -243,7 +243,7 @@ export class BaseComponent extends HTMLElement {
           throw new Error(`Status ${response.status}`);
         }
         const text = await response.text();
-        const processed = this._processTemplate(text);
+        const processed = this._processTemplate(text || ' ');
         // Сразу сохраняем в кэш, чтобы другие экземпляры получили его мгновенно
         this.constructor._cachedHtml = processed;
         return processed;
