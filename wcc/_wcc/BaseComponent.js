@@ -186,7 +186,7 @@ export class BaseComponent extends HTMLElement {
    * @returns {string|null}
    */
   static get template() {
-    return _template;
+    return this.myTemplate || _template;
   }
 
   /**
@@ -352,10 +352,14 @@ export class BaseComponent extends HTMLElement {
     });
   }
 
-  static registerWcc(ctor, url) {
+  static registerWcc(ctor, url, template = null) {
     if (typeof ctor !== 'function') {
       console.error('[BaseComponent] registerWcc: ctor is not a function', ctor);
       return;
+    }
+
+    if (template) {
+      ctor.myTemplate = template;
     }
 
     if (!(ctor.prototype instanceof BaseComponent)) {

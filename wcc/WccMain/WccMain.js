@@ -1,8 +1,15 @@
 // подключить: <script data-wcc type="module" src="wcc/WccMain/WccMain.js"></script>
-// 
-const myTemplate = `
-<p>Hello World!</p>
-`;
+const myTemplate = ``;
+// const myTemplate = `
+// <style>
+//   /* :host { display: block; } */
+//   .wccMain {
+
+//   }
+// </style>
+// <main class="wccMain">
+//   wccMain 👉<slot name=""></slot>
+// </main>`;
 
 export class WccMain extends BaseComponent {
   constructor() {
@@ -26,7 +33,7 @@ export class WccMain extends BaseComponent {
   // ============================================================
   // Шаг 2: Кэширование и обновление отображения
   // ============================================================
-  
+
   // _initView() {
   //   this._cacheElements();
   //   this.updateView();
@@ -63,4 +70,4 @@ export class WccMain extends BaseComponent {
   // }
 }
 
-BaseComponent.registerWcc(WccMain, import.meta.url);
+BaseComponent.registerWcc(WccMain, import.meta.url, myTemplate);

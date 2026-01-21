@@ -23,7 +23,8 @@
     "scope": "javascript",
     "body": [
       "// подключить: <script data-wcc type=\"module\" src=\"wcc/${TM_FILENAME_BASE}/${TM_FILENAME_BASE}.js\"></script>",
-      "// ",
+      "const myTemplate = ``;",
+      "//",
       "export class ${TM_FILENAME_BASE} extends BaseComponent {",
       "  constructor() {",
       "    super(); this._refs = {};",
@@ -83,7 +84,7 @@
       "  // }",
       "}",
       "",
-      "BaseComponent.registerWcc(${TM_FILENAME_BASE}, import.meta.url);"
+      "BaseComponent.registerWcc(${TM_FILENAME_BASE}, import.meta.url, myTemplate);"
     ],
     "description": "Полный класс компонента BaseComponent (с закомментированными примерами)"
   },
@@ -118,18 +119,6 @@
       "}"
     ],
     "description": "Блок свойств static get properties"
-  },
-  "WCC Property Item": {
-    "prefix": "wcc=prop-item",
-    "scope": "javascript",
-    "body": [
-      "${1:propName}: {",
-      "  type: ${2|String,Number,Boolean|},",
-      "  attribute: '${3:attribute-name}',",
-      "  default: ${4:null}",
-      "},"
-    ],
-    "description": "Одно свойство для блока properties"
   },
   "WCC Setup Event Listeners": {
     "prefix": "wcc=events",
@@ -166,24 +155,6 @@
       "}"
     ],
     "description": "Рендер списка через innerTemplate (полный цикл)"
-  },
-  "WCC Static Template": {
-    "prefix": "wcc=static-tpl",
-    "scope": "javascript",
-    "body": [
-      "static get template() {",
-      "  return `",
-      "    <style>",
-      "      :host { display: block; }",
-      "      .${1:component} { }",
-      "    </style>",
-      "    <div class=\"$1\">",
-      "      $0",
-      "    </div>",
-      "  `;",
-      "}"
-    ],
-    "description": "Статический шаблон (static get template)"
   },
   "WCC Inner Template HTML": {
     "prefix": "wcc=inner-html",
@@ -228,7 +199,7 @@
       "  };",
       "}"
     ],
-    "description": "Кэширование DOM элементов в this._refs"
+    "description": "Кэширование ссылок на DOM элементы в this._refs"
   },
   "WCC Watch Property": {
     "prefix": "wcc=watch",
@@ -277,14 +248,6 @@
       "<slot name=\"${1:slotName}\"></slot>"
     ],
     "description": "Именованный слот"
-  },
-  "WCC Slot Default": {
-    "prefix": "wcc=slot-def",
-    "scope": "html",
-    "body": [
-      "<slot></slot>"
-    ],
-    "description": "Слот по умолчанию"
   },
   "WCC Value Interpolation": {
     "prefix": "wcc=val",
