@@ -1,12 +1,12 @@
 // | Имя сниппета             | prefix          | scope      | описание                                   |
 // |--------------------------|-----------------|------------|--------------------------------------------|
 // | WCC Component Class      | wcc=class       | javascript | Полный класс компонента BaseComponent      |
+// | WCC HTML Skeleton        | wcc=html        | html       | Каркас HTML + style для компонента         |
 // | WCC Properties           | wcc=props       | javascript | Блок static get properties                 |
 // | WCC Property Item        | wcc=prop-item   | javascript | Одно свойство в блоке properties           |
 // | WCC Setup Event Listeners| wcc=events      | javascript | Настройка слушателей (onRef + emit)        |
 // | WCC Render List          | wcc=list        | javascript | Рендер списка (полный цикл)                |
 // | WCC Static Template      | wcc=static-tpl  | javascript | static get template()                      |
-// | WCC HTML Skeleton        | wcc=html        | html       | Каркас HTML + style для компонента         |
 // | WCC Cache DOM            | wcc=cache       | javascript | Кэширование DOM (_cacheElements)           |
 // | WCC Watch Property       | wcc=watch       | javascript | Реактивность (propertyChangedCallback)     |
 // | WCC All Ready            | wcc=ready       | javascript | Хук готовности (onAllComponentsReady)      |
@@ -23,7 +23,7 @@
     "scope": "javascript",
     "body": [
       "// подключить: <script data-wcc type=\"module\" src=\"wcc/${TM_FILENAME_BASE}/${TM_FILENAME_BASE}.js\"></script>",
-      "const myTemplate = ``; // для продакшена, вставить сюда содержимое файла ${TM_FILENAME_BASE}.html",
+      "const myTemplate = ``; // для прод, вставить сюда содержимое файла ${TM_FILENAME_BASE}.html",
       "//",
       "export class ${TM_FILENAME_BASE} extends BaseComponent {",
       "  constructor() {",
@@ -94,11 +94,12 @@
     "body": [
       "<style>",
       "  .${TM_FILENAME_BASE/^([A-Z])(.*)/${1:/downcase}$2/} {",
-      "    ",
+      "    display: block; background-color: #f0f0f0;",
       "  }",
       "</style>",
       "<div class=\"${TM_FILENAME_BASE/^([A-Z])(.*)/${1:/downcase}$2/}\">",
-      "  ${TM_FILENAME_BASE/^([A-Z])(.*)/${1:/downcase}$2/}",
+      "  ${TM_FILENAME_BASE}",
+      "  [<slot name=\"\"></slot>]",
       "</div>"
     ],
     "description": "Каркас HTML для компонента"
