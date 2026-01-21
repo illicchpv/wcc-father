@@ -3,9 +3,9 @@
 [github](https://github.com/illicchpv/wcc-father)
 
 - .vscode\wcc.code-snippets - сниппеты для VSCode
-- wcc\_wcc\BaseComponent.DOC.md - документация к BaseComponent
-- wcc\_wcc\BaseComponent.DOCshort.md - краткая документация к BaseComponent
-- wcc\_wcc\BuildComponentPlan.DOC.md - план построения компонента и др.
+- wcc\base\BaseComponent.DOC.md - документация к BaseComponent
+- wcc\base\BaseComponent.DOCshort.md - краткая документация к BaseComponent
+- wcc\base\BuildComponentPlan.DOC.md - план построения компонента и др.
 
 ## Файловая структура
 
@@ -22,7 +22,7 @@ wcc-github/
 ├── js/
 │   └── main.js
 ├── wcc/
-│   ├── _wcc/
+│   ├── base/
 │   │   ├── BaseComponent.DOC.md
 │   │   ├── BaseComponent.DOCshort.md
 │   │   ├── BaseComponent.js

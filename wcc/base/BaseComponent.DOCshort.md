@@ -8,7 +8,7 @@
 
 Добавьте в `head` страницы (перед скриптами компонентов):
 ```html
-<script type="module" src="wcc/_wcc/BaseComponent.js"></script>
+<script type="module" src="wcc/base/BaseComponent.js"></script>
 ```
 
 ## 1. Базовый паттерн компонента
