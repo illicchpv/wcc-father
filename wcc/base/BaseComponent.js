@@ -243,7 +243,31 @@ export class BaseComponent extends HTMLElement {
           throw new Error(`Status ${response.status}`);
         }
         const text = await response.text();
-        const processed = this._processTemplate(text || ' ');
+
+        // Очистка от инъекций Live Server (скрипты ломают слоты и SVG)
+        // Сначала чистим регуляркой, чтобы не сломать парсер
+        let cleanText = text
+          .replace(/<!--\s*Code injected by live-server\s*-->/gi, "")
+          .replace(/<script[\s\S]*?<\/script>/gi, "");
+          
+        // Удаляем обертку body если она есть (использовалась для защиты от инъекций)
+        cleanText = cleanText.replace(/<\/?body>/gi, "");
+
+        try {
+          // Дополнительная зачистка через DOM (на случай если что-то пропустили)
+          const temp = document.createElement('template');
+          temp.innerHTML = cleanText;
+          
+          const scripts = temp.content.querySelectorAll('script');
+          if (scripts.length > 0) {
+            scripts.forEach(s => s.remove());
+            cleanText = temp.innerHTML;
+          }
+        } catch (e) {
+          console.warn('[BaseComponent] Sanitization failed', e);
+        }
+
+        const processed = this._processTemplate(cleanText || ' ');
         // Сразу сохраняем в кэш, чтобы другие экземпляры получили его мгновенно
         this.constructor._cachedHtml = processed;
         return processed;

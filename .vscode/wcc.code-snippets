@@ -97,10 +97,13 @@
       "    display: block; background-color: #f0f0f0;",
       "  }",
       "</style>",
+      "<body>",
       "<div class=\"${TM_FILENAME_BASE/^([A-Z])(.*)/${1:/downcase}$2/}\">",
       "  ${TM_FILENAME_BASE}",
       "  [<slot name=\"\"></slot>]",
-      "</div>"
+      "  <div class=\"list-container\"></div>",
+      "</div>",
+      "</body>"
     ],
     "description": "Каркас HTML для компонента"
   },
@@ -141,17 +144,18 @@
     "scope": "javascript",
     "body": [
       "_processInnerTemplates(name, content) {",
-      "  if (name === '${1:item-template}') {",
-      "    this._${1}Template = content;",
-      "    this._render${2:Items}();",
+      "  if (name === 'innerTemplateName') {",
+      "    this._innerTemplate = content;",
+      "    this._renderInnerTemplate();",
       "  }",
       "}",
       "",
-      "_${3:renderItems}() {",
-      "  if (!this.${4:items} || !this._${1}Template) return;",
-      "  const container = this.querySelector('.${5:container-class}');",
+      "_renderInnerTemplate() {",
+      "  const items = [1,2,3]",
+      "  if (!items || !this._innerTemplate) return;",
+      "  const container = this.querySelector('.list-container');",
       "  if (!container) return;",
-      "  this.renderInnerTemplateList(this.${4}, this._${1}Template, container);",
+      "  this.renderInnerTemplateList(items, this._innerTemplate, container);",
       "}"
     ],
     "description": "Рендер списка через innerTemplate (полный цикл)"
@@ -160,9 +164,9 @@
     "prefix": "wcc=inner-html",
     "scope": "html",
     "body": [
-      "<!-- innerTemplate:${1:inner-template-name} -->",
+      "<!-- innerTemplate:${1:innerTemplateName} -->",
       "<div class=\"class-name\">",
-      "  $0",
+      "  ${this.item}",
       "</div>",
       "<!-- /innerTemplate -->"
     ],
