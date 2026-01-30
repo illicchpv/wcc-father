@@ -97,13 +97,12 @@
       "    display: block; background-color: #f0f0f0;",
       "  }",
       "</style>",
-      "<body>",
       "<div class=\"${TM_FILENAME_BASE/^([A-Z])(.*)/${1:/downcase}$2/}\">",
       "  ${TM_FILENAME_BASE}",
       "  [<slot name=\"\"></slot>]",
       "  <div class=\"list-container\"></div>",
       "</div>",
-      "</body>"
+      "<body></body>"
     ],
     "description": "Каркас HTML для компонента"
   },
