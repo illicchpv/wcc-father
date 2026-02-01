@@ -151,9 +151,7 @@
       "",
       "_renderInnerTemplate() {",
       "  const items = [1,2,3]",
-      "  if (!items || !this._innerTemplate) return;",
       "  const container = this.querySelector('.list-container');",
-      "  if (!container) return;",
       "  this.renderInnerTemplateList(items, this._innerTemplate, container);",
       "}"
     ],

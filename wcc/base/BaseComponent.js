@@ -249,7 +249,7 @@ export class BaseComponent extends HTMLElement {
         let cleanText = text
           .replace(/<!--\s*Code injected by live-server\s*-->/gi, "")
           .replace(/<script[\s\S]*?<\/script>/gi, "");
-          
+
         // Удаляем обертку body если она есть (использовалась для защиты от инъекций)
         cleanText = cleanText.replace(/<\/?body>/gi, "");
 
@@ -257,7 +257,7 @@ export class BaseComponent extends HTMLElement {
           // Дополнительная зачистка через DOM (на случай если что-то пропустили)
           const temp = document.createElement('template');
           temp.innerHTML = cleanText;
-          
+
           const scripts = temp.content.querySelectorAll('script');
           if (scripts.length > 0) {
             scripts.forEach(s => s.remove());
@@ -603,7 +603,11 @@ export class BaseComponent extends HTMLElement {
       ? this.querySelector(containerOrSelector)
       : containerOrSelector;
 
-    if (!container || !Array.isArray(items)) return;
+    let err = null;
+    if (!Array.isArray(items)) err = console.warn('renderInnerTemplateList -- items not Array!');
+    if (!templateContent) err = console.warn('renderInnerTemplateList -- empty templateContent!');
+    if (!container) err = console.warn('renderInnerTemplateList -- container not found!');
+    if (err !== null) return;
 
     container.innerHTML = '';
 
