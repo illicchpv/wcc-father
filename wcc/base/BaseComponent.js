@@ -644,8 +644,17 @@ export class BaseComponent extends HTMLElement {
   }
 
   onRef(refName, eventType, handler, options) {
-    if (!this._refs) return;
-    const target = this._refs[refName];
+    if (!refName) {
+      console.warn('onRef -- refName not set!');
+      return;
+    }
+    let target = null;
+    if (typeof refName === 'object') {
+      target = refName;
+    } else {
+      if (!this._refs) return;
+      target = this._refs[refName];
+    }
     if (!target) return;
     target.addEventListener(eventType, handler, options);
   }
