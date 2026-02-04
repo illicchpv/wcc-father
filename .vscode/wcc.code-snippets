@@ -118,7 +118,8 @@
     "prefix": "wcc=catch-event",
     "scope": "javascript",
     "body": [
-      "document.addEventListener('wcc-event', (wccEvent) => {",
+      "const eventEmitter = document.getElementById('wcc-event-emitter');",
+      "eventEmitter.addEventListener('wcc-event', (wccEvent) => {",
       "  console.log('document wccEvent.detail: ', wccEvent.detail);",
       "  console.log('document wccEvent.detail.event: ', wccEvent.detail.event);",
       "});",
