@@ -19,6 +19,23 @@ const IGNORE_DIRS = ['node_modules', 'scripts', 'css', 'img', 'js'];
 function processDirectory(dir) {
   if (!fs.existsSync(dir)) return;
 
+  // 1. Проверяем текущую директорию (CWD или рекурсивный вызов)
+  // Если это директория компонента (имя папки = имя js/html файлов)
+  const dirName = path.basename(dir);
+  const jsFileName = `${dirName}.js`;
+  const htmlFileName = `${dirName}.html`;
+  const jsPath = path.join(dir, jsFileName);
+  const htmlPath = path.join(dir, htmlFileName);
+
+  if (fs.existsSync(jsPath) && fs.existsSync(htmlPath)) {
+    try {
+      processComponent(jsPath, htmlPath);
+    } catch (e) {
+      console.error(`Error processing ${jsFileName}:`, e);
+    }
+  }
+
+  // 2. Рекурсивно обходим подпапки
   const entries = fs.readdirSync(dir, {withFileTypes: true});
 
   for (const entry of entries) {
@@ -28,24 +45,6 @@ function processDirectory(dir) {
       // Игнорируем папки, начинающиеся с точки, и те, что в списке IGNORE_DIRS
       if (entry.name.startsWith('.') || IGNORE_DIRS.includes(entry.name)) {
         continue;
-      }
-
-      // Имя папки
-      const dirName = entry.name;
-
-      // Ожидаемые файлы
-      const jsFileName = `${dirName}.js`;
-      const htmlFileName = `${dirName}.html`;
-      const jsPath = path.join(fullPath, jsFileName);
-      const htmlPath = path.join(fullPath, htmlFileName);
-
-      // Проверка совпадения имени папки и наличия файлов
-      if (fs.existsSync(jsPath) && fs.existsSync(htmlPath)) {
-        try {
-          processComponent(jsPath, htmlPath);
-        } catch (e) {
-          console.error(`Error processing ${jsFileName}:`, e);
-        }
       }
 
       // Рекурсия
