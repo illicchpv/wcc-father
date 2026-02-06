@@ -2,23 +2,23 @@
 const myTemplate = ``; // для прод, вставить сюда содержимое файла WccMain.html
 //
 export class WccMain extends BaseComponent {
-  constructor() {
-    super(); this._refs = {};
-  }
-  connectedCallback() {
-    this.loadTemplate(import.meta.url);
-  }
-  static get properties() {
-    return {
-      // counterValue: {type: Number, attribute: 'counter-value', default: 0},
-    };
-  }
+  // constructor() {
+  //   super(); this._refs = {};
+  // }
+  // connectedCallback() {
+  //   this.loadTemplate(import.meta.url);
+  // }
+  // static get properties() {
+  //   return {
+  //     // counterValue: {type: Number, attribute: 'counter-value', default: 0},
+  //   };
+  // }
 
-  render() {
-    super.render();
-    // this._initView();       // <--- Раскомментировать для Шага 2
-    // this._initListeners();  // <--- Раскомментировать для Шага 3
-  }
+  // render() {
+  //   super.render();
+  //   // this._initView();       // <--- Раскомментировать для Шага 2
+  //   // this._initListeners();  // <--- Раскомментировать для Шага 3
+  // }
 
   // ============================================================
   // Шаг 2: Кэширование и обновление отображения

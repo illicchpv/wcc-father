@@ -2,6 +2,7 @@
 // |--------------------------|-----------------|------------|----------------------------------------------|
 // | WCC Component Class      | wcc=class       | javascript | Полный класс компонента BaseComponent        |
 // | WCC Component Min Class  | wcc=min-class   | javascript | Минимальный класс компонента BaseComponent   |
+// | WCC Component Min0 Class | wcc=Min0-class  | javascript | Min0 класс компонента BaseComponent          |
 // | WCC catch wcc-event      | wcc=catch-event | javascript | Обработка события созданного wcc компонентом |
 // | WCC HTML Skeleton        | wcc=html        | html       | Каркас HTML + style для компонента           |
 // | WCC Properties           | wcc=props       | javascript | Блок static get properties                   |
@@ -113,6 +114,21 @@
       "BaseComponent.registerWcc(${TM_FILENAME_BASE}, import.meta.url, myTemplate);"
     ],
     "description": "Минимальный класс компонента BaseComponent"
+  },
+  "WCC Component Min0 Class": {
+    "prefix": "wcc=min0-class",
+    "scope": "javascript",
+    "body": [
+      "// подключить: <script data-wcc type=\"module\" src=\"${TM_DIRECTORY/(.*\\\\([^\\\\]+)\\\\[^\\\\]+)$/$2/}/${TM_FILENAME_BASE}/${TM_FILENAME_BASE}.js\"></script>",
+      "const myTemplate = ``; // для прод, вставить сюда содержимое файла ${TM_FILENAME_BASE}.html",
+      "//",
+      "export class ${TM_FILENAME_BASE} extends BaseComponent {",
+      "",
+      "}",
+      "",
+      "BaseComponent.registerWcc(${TM_FILENAME_BASE}, import.meta.url, myTemplate);"
+    ],
+    "description": "Min0 класс компонента BaseComponent"
   },
   "WCC catch wcc-event": {
     "prefix": "wcc=catch-event",

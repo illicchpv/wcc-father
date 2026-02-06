@@ -442,6 +442,10 @@ export class BaseComponent extends HTMLElement {
       return;
     }
 
+    // Сначала регистрируем URL в реестре, чтобы connectedCallback (который сработает при define)
+    // уже мог найти URL шаблона.
+    BaseComponent.register(tag, url);
+
     const existing = customElements.get(tag);
     if (existing && existing !== ctor) {
       console.error('[BaseComponent] registerWcc: tag already registered with different constructor', {className, tag});
@@ -458,8 +462,6 @@ export class BaseComponent extends HTMLElement {
     } else {
       console.warn('[BaseComponent] registerWcc: tag already defined, skipping define', {className, tag});
     }
-
-    BaseComponent.register(tag, url);
   }
 
   /**
