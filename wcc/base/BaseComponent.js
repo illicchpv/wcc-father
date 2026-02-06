@@ -10,6 +10,17 @@ export class BaseComponent extends HTMLElement {
     BaseComponent._registerInstance(this);
   }
 
+  connectedCallback() {
+    const registry = BaseComponent._registry;
+    if (registry && registry.tags) {
+      const tag = this.tagName.toLowerCase();
+      const url = registry.tags[tag];
+      if (url && !this._hasRendered) {
+        this.loadTemplate(url);
+      }
+    }
+  }
+
   static toKebab(name) {
     if (typeof name !== 'string' || !name) return '';
     const normalized = name.trim();
@@ -323,6 +334,13 @@ export class BaseComponent extends HTMLElement {
    */
   static register(tagName, url) {
     const registry = BaseComponent._ensureRegistry();
+
+    // Сохраняем связь тега с URL для автоматической загрузки шаблона
+    if (!registry.tags) {
+      registry.tags = {};
+    }
+    registry.tags[tagName.toLowerCase()] = url;
+
     if (!registry.scripts[url]) {
       registry.scripts[url] = {used: false};
     }
