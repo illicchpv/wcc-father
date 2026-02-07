@@ -32,17 +32,17 @@ static get properties() {
   return {
     userName: {
       type: String,
-      attribute: 'user-name',
+      attribute: 'user-name', // Можно указать явно
       default: 'Guest'
     },
     userAge: {
       type: Number,
-      attribute: 'user-age',
+      // attribute: 'user-age', // Если не указано, будет автоматически: 'user-age' (kebab-case)
       default: 18
     },
     isActive: {
       type: Boolean,
-      attribute: 'is-active',
+      // attribute: 'is-active', // Будет автоматически: 'is-active'
       default: false
     }
   };
@@ -51,7 +51,9 @@ static get properties() {
 
 Что даёт:
 - создаются геттеры/сеттеры `this.userName`, `this.userAge`, `this.isActive`;
-- значения синхронизируются с атрибутами (`user-name`, `user-age`, `is-active`);
+- значения синхронизируются с атрибутами:
+  - если указано поле `attribute` — используется оно;
+  - если не указано — используется kebab-case версия имени свойства (например, `userName` → `user-name`);
 - при изменении свойства вызывается `propertyChangedCallback(name, oldValue, newValue)`;
 - при изменении атрибута вызывается `attributeChangedCallback`, который обновляет свойство.
 

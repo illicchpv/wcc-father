@@ -36,9 +36,10 @@ export class BaseComponent extends HTMLElement {
    */
   static get observedAttributes() {
     const props = this.properties || {};
-    return Object.values(props)
-      .filter(prop => prop.attribute)
-      .map(prop => prop.attribute);
+    return Object.keys(props).map(name => {
+      const config = props[name];
+      return config.attribute || BaseComponent.toKebab(name);
+    });
   }
 
   /**
@@ -71,7 +72,7 @@ export class BaseComponent extends HTMLElement {
 
     Object.keys(props).forEach(name => {
       const config = props[name];
-      const attributeName = config.attribute;
+      const attributeName = config.attribute || BaseComponent.toKebab(name);
 
       // Валидация: Boolean свойство не должно иметь default: true,
       // так как булевы атрибуты работают по принципу наличия (есть = true).
@@ -160,7 +161,8 @@ export class BaseComponent extends HTMLElement {
 
     for (const propName in props) {
       const config = props[propName];
-      if (config.attribute === name) {
+      const attributeName = config.attribute || BaseComponent.toKebab(propName);
+      if (attributeName === name) {
         let value = newValue;
 
         // Приведение типов

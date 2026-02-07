@@ -3,8 +3,8 @@ import {BaseComponent} from '../base/BaseComponent.js';
 export class WccMarkdown extends BaseComponent {
   static get properties() {
     return {
-      src: {type: String, default: '', attribute: 'src'},
-      expanded: {type: Boolean, default: false, attribute: 'expanded'}
+      src: {type: String, default: ''},
+      expanded: {type: Boolean, default: false}
     };
   }
 
