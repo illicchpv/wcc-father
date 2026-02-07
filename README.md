@@ -28,13 +28,18 @@ wcc-github/
 │   │   ├── BaseComponent.DOCshort.md
 │   │   ├── BaseComponent.js
 │   │   ├── BuildComponentPlan.DOC.md
-│   │   └── minify.js
+│   │   ├── inline-templates.js
+│   │   ├── minify.js
+│   │   └── update-versions.js
 │   ├── WccContent/
 │   │   ├── WccContent.html
 │   │   └── WccContent.js
-│   └── WccMain/
-│       ├── WccMain.html
-│       └── WccMain.js
+│   ├── WccMain/
+│   │   ├── WccMain.html
+│   │   └── WccMain.js
+│   └── WccMarkdown/
+│       ├── WccMarkdown.html
+│       └── WccMarkdown.js
 ├── index.html
 └── README.md
 ```
