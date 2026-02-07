@@ -1,0 +1,148 @@
+<style>
+  wcc-markdown {
+    display: block;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    margin: 16px 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background-color: #fff;
+  }
+
+  .header {
+    padding: 12px 16px;
+    background-color: #f6f8fa;
+    border-bottom: 1px solid #e1e4e8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    border-radius: 6px 6px 0 0;
+  }
+
+  wcc-markdown:not([expanded]) .header {
+    border-bottom: none;
+    border-radius: 6px;
+  }
+
+  .header:hover {
+    background-color: #f0f3f6;
+  }
+
+  .title {
+    font-weight: 600;
+    font-size: 16px;
+    margin: 0;
+    color: #24292e;
+  }
+
+  .icon {
+    color: #586069;
+    transition: transform 0.2s ease;
+    font-size: 12px;
+  }
+
+  wcc-markdown[expanded] .icon {
+    transform: rotate(180deg);
+  }
+
+  .markdown-body {
+    padding: 24px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #24292e;
+    overflow-x: auto;
+  }
+
+  /* Basic Markdown Styles */
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .markdown-body h1 {
+    font-size: 2em;
+    border-bottom: 1px solid #eaecef;
+    padding-bottom: 0.3em;
+  }
+
+  .markdown-body h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid #eaecef;
+    padding-bottom: 0.3em;
+  }
+
+  .markdown-body p {
+    margin-bottom: 16px;
+  }
+
+  .markdown-body code {
+    padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 85%;
+    background-color: #f6f8fa;
+    border-radius: 3px;
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  }
+
+  .markdown-body pre {
+    padding: 16px;
+    overflow: auto;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: #f6f8fa;
+    border-radius: 3px;
+  }
+
+  .markdown-body pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  .markdown-body blockquote {
+    padding: 0 1em;
+    color: #6a737d;
+    border-left: 0.25em solid #dfe2e5;
+    margin: 0 0 16px 0;
+  }
+
+  .markdown-body img {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .markdown-body ul,
+  .markdown-body ol {
+    padding-left: 2em;
+    margin-bottom: 16px;
+  }
+
+  .markdown-body table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
+  .markdown-body table th,
+  .markdown-body table td {
+    padding: 6px 13px;
+    border: 1px solid #dfe2e5;
+  }
+
+  .markdown-body table tr:nth-child(2n) {
+    background-color: #f6f8fa;
+  }
+</style>
+
+<div class="header" onclick="this.closest('wcc-markdown').toggle()">
+  <h3 class="title"><!-- include -->${this._title}<!-- /include --></h3>
+  <span class="icon">▼</span>
+</div>
+
+<!-- if(this.expanded) -->
+<div class="markdown-body"></div>
+<!-- endif -->

@@ -19,6 +19,8 @@
   <script data-wcc type="module" src="wcc/WccContent/WccContent.js"></script>
   <!-- <script data-wcc type="module" src="https://illicchpv.github.io/wcc-father/wcc/WccContent/WccContent.js"></script> -->
 
+  <script data-wcc type="module" src="wcc/WccMarkdown/WccMarkdown.js"></script>
+
   <!--  -->
   <script type="module" src="js/main.js"></script>
 
@@ -31,9 +33,17 @@
 
     <wcc-main>
 
-      <wcc-content>тут-content-слот</wcc-content>
+      <wcc-content>
+        <span>Пример контента</span>
+      </wcc-content>
 
     </wcc-main>
+
+    <hr>
+    <wcc-markdown src="wcc/base/BaseComponent.DOC.md"></wcc-markdown>
+    <wcc-markdown src="wcc/base/BaseComponent.DOCshort.md"></wcc-markdown>
+    <wcc-markdown src="wcc/base/BaseComponent.work.md"></wcc-markdown>
+    <wcc-markdown src="wcc/base/BuildComponentPlan.DOC.md"></wcc-markdown>
 
   </div>
 
