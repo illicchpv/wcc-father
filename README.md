@@ -40,10 +40,10 @@ wcc-github/
 ```
 
 ### доки шпоры и примеры
-- [BaseComponent.DOC.md](https://illicchpv.github.io/wcc-father/wcc/base/BaseComponent.DOC.md)
-- [BaseComponent.DOCshort.md](https://illicchpv.github.io/wcc-father/wcc/base/BaseComponent.DOCshort.md)
-- [BuildComponentPlan.DOC.md](https://illicchpv.github.io/wcc-father/wcc/base/BuildComponentPlan.DOC.md)
-- [BaseComponent.work.md](https://illicchpv.github.io/wcc-father/wcc/base/BaseComponent.work.md)
+- [BaseComponent.DOC.md     ](https://illicchpv.github.io/wcc-father/#doc)
+- [BaseComponent.DOCshort.md](https://illicchpv.github.io/wcc-father/#doc-short)
+- [BuildComponentPlan.DOC.md](https://illicchpv.github.io/wcc-father/#plan)
+- [BaseComponent.work.md    ](https://illicchpv.github.io/wcc-father/#work)
 
 
 
