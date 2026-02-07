@@ -1,3 +1,5 @@
+import {BaseComponent} from '../base/BaseComponent.js';
+
 export class WccMarkdown extends BaseComponent {
   static get properties() {
     return {
@@ -14,6 +16,7 @@ export class WccMarkdown extends BaseComponent {
     this._title = 'Loading...';
     this._content = '';
     this._loadedUrl = null;
+    this._boundCheckHash = this._checkHash.bind(this);
     // console.log('[WccMarkdown] Constructor called');
   }
 
@@ -21,8 +24,34 @@ export class WccMarkdown extends BaseComponent {
     // console.log('[WccMarkdown] connectedCallback', this.src);
     super.connectedCallback();
 
-    // We rely on propertyChangedCallback (triggered by attributes or property setters)
-    // to load the content. No need to duplicate logic here.
+    // Check initial hash
+    this._checkHash();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', this._boundCheckHash);
+  }
+
+  disconnectedCallback() {
+    if (super.disconnectedCallback) {
+      super.disconnectedCallback();
+    }
+    window.removeEventListener('hashchange', this._boundCheckHash);
+  }
+
+  _checkHash() {
+    // If component has an ID and it matches the URL hash
+    if (this.id) {
+      const hash = window.location.hash.substring(1); // remove '#'
+      if (hash === this.id) {
+        if (!this.expanded) {
+          this.expanded = true;
+          // Optional: scroll to element after a short delay to ensure rendering
+          setTimeout(() => {
+            this.scrollIntoView({behavior: 'smooth', block: 'start'});
+          }, 100);
+        }
+      }
+    }
   }
 
   propertyChangedCallback(name, oldValue, newValue) {
