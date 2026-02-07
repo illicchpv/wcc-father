@@ -43,6 +43,7 @@ wcc-github/
 - [BaseComponent.DOC.md](https://illicchpv.github.io/wcc-father/wcc/base/BaseComponent.DOC.md)
 - [BaseComponent.DOCshort.md](https://illicchpv.github.io/wcc-father/wcc/base/BaseComponent.DOCshort.md)
 - [BuildComponentPlan.DOC.md](https://illicchpv.github.io/wcc-father/wcc/base/BuildComponentPlan.DOC.md)
+- [BaseComponent.work.md](https://illicchpv.github.io/wcc-father/wcc/base/BaseComponent.work.md)
 
 
 
