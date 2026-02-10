@@ -19,8 +19,14 @@
 `BaseComponent` должен быть подключен на странице один раз перед остальными компонентами. Он регистрирует себя в глобальной области видимости `window.BaseComponent`.
 
 ```html
-<script type="module" src="wcc/_wcc/BaseComponent.js"></script>
+<script type="module" src="wcc/base/BaseComponent.js"></script>
 ```
+
+либо с github page
+```html
+<script type="module" src="https://illicchpv.github.io/wcc-father/wcc/base/BaseComponent.js"></script>
+```
+
 
 ## 1. Декларативные свойства (`static get properties`)
 
@@ -468,6 +474,59 @@ connectedCallback() {
    - использует `renderInnerTemplateList` и `evaluateString`.
 
 ---
+
+## 15.2 Работа с глобальными событиями (window/document)
+
+BaseComponent **не предоставляет** автоматической магии для подписки и отписки от глобальных событий (например, `resize`, `scroll`, `popstate`, `keydown` на `window` или `document`).
+
+Это сделано намеренно:
+1.  **Принцип ответственности**: Компонент сам должен решать, когда и на что ему подписываться.
+2.  **Избежание утечек памяти**: Автоматическая подписка без понимания контекста может привести к тому, что обработчики останутся висеть после удаления компонента.
+
+### Правила реализации
+
+Если вашему компоненту нужно слушать **внешние** события (вне своего DOM-дерева), вы **обязаны** вручную реализовать методы жизненного цикла:
+
+1.  **`connectedCallback()`**: Подписываемся (`addEventListener`).
+2.  **`disconnectedCallback()`**: Отписываемся (`removeEventListener`).
+
+### Пример (из WccNavLink)
+
+```js
+export class WccNavLink extends BaseComponent {
+  constructor() {
+    super();
+    // Привязываем контекст, чтобы можно было передать ссылку на метод в removeEventListener
+    this._handleLocationChange = this._handleLocationChange.bind(this);
+  }
+
+  connectedCallback() {
+    // 1. Обязательно загружаем шаблон (если используем BaseComponent)
+    this.loadTemplate(import.meta.url);
+    
+    // 2. Подписываемся на глобальные события
+    window.addEventListener('popstate', this._handleLocationChange);
+    window.addEventListener('hashchange', this._handleLocationChange);
+  }
+
+  disconnectedCallback() {
+    // 3. Обязательно отписываемся при удалении компонента!
+    // Если этого не сделать, обработчик останется в памяти браузера,
+    // будет вызываться для несуществующего компонента и вызывать ошибки.
+    window.removeEventListener('popstate', this._handleLocationChange);
+    window.removeEventListener('hashchange', this._handleLocationChange);
+  }
+
+  _handleLocationChange() {
+    // ... реакция на изменение URL
+  }
+}
+```
+
+> **Важно**: Для внутренних событий (например, клик по кнопке *внутри* компонента), которую вы нашли через `this.querySelector`, ручная отписка в `disconnectedCallback` **не требуется**. Браузер сам удалит обработчики вместе с удалением DOM-узла кнопки.
+
+---
+
 
 ## 13. Блоки include
 
