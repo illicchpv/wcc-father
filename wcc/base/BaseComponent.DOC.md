@@ -14,7 +14,7 @@
 
 ---
 
-## 0. Подключение
+## 1. Подключение
 
 `BaseComponent` должен быть подключен на странице один раз перед остальными компонентами. Он регистрирует себя в глобальной области видимости `window.BaseComponent`.
 
@@ -27,9 +27,63 @@
 <script type="module" src="https://illicchpv.github.io/wcc-father/wcc/base/BaseComponent.js"></script>
 ```
 
+---
 
-## 1. Декларативные свойства (`static get properties`)
+## 2. Регистрация компонента
 
+Для создания нового компонента нужно создать класс, наследующий от `BaseComponent`, и зарегистрировать его.
+
+### Рекомендуемый паттерн (`registerWcc`)
+
+```js
+export class HeaderBlock extends BaseComponent {
+  connectedCallback() {
+    this.loadTemplate(import.meta.url);
+  }
+
+  render() {
+    super.render();
+  }
+}
+
+BaseComponent.registerWcc(HeaderBlock, import.meta.url);
+```
+
+Правила:
+- имя класса — в PascalCase, например `HeaderBlock`, `NavBar`;
+- HTML-тег вычисляется автоматически по имени класса через `BaseComponent.toKebab`:
+  - `HeaderBlock` → `header-block`;
+  - `NavBar` → `nav-bar`.
+
+`registerWcc`:
+- валидирует класс (наследуется от `BaseComponent`, корректное имя);
+- строит тег в `kebab-case` и проверяет, что он подходит для custom element;
+- один раз вызывает `customElements.define(tag, ctor)` (с защитой от повторной регистрации);
+- прокидывает тег и `import.meta.url` в систему отслеживания загрузки.
+
+---
+
+## 3. Общий жизненный цикл наследника
+
+Типичный компонент на базе BaseComponent:
+
+1. Описывает свойства через `static get properties`.
+2. В `constructor` инициализирует своё состояние.
+3. В `connectedCallback` вызывает `this.loadTemplate(import.meta.url)`.
+4. Переопределяет `render()`, если нужно:
+   - вызывает `super.render()`;
+   - кэширует ссылки на элементы (`querySelector`, `_cacheElements`);
+   - навешивает обработчики событий (через `_setupEventListeners`, `onRef`, `emit`);
+   - вызывает `updateView()` для заполнения данных.
+5. Переопределяет `propertyChangedCallback`, чтобы реагировать на изменения свойств.
+6. При необходимости:
+   - использует условные блоки `<!-- if(...) -->`;
+   - определяет `innerTemplate` для списков и реализует `_processInnerTemplates`;
+   - использует `renderInnerTemplateList` и `evaluateString`.
+
+---
+
+## 4. Декларативные свойства (`static get properties`)
 
 BaseComponent позволяет описывать свойства компонента в статическом геттере:
 
@@ -70,7 +124,9 @@ static get properties() {
 
 ---
 
-## 2. Загрузка HTML-шаблона (`loadTemplate`)
+## 5. Шаблоны и Стили
+
+### 5.1. Загрузка HTML-шаблона (`loadTemplate`)
 
 Шаблон ищется в той же папке, что и JS-файл компонента, по имени класса:
 - компонент: `MyComponent.js`;
@@ -85,14 +141,14 @@ connectedCallback() {
 ```
 
 Метод:
-- проверяет, был ли компонент уже отрендерен (чтобы избежать повторного рендера при перемещении в DOM);
+- проверяет, был ли компонент уже отрендерен;
 - проверяет наличие статического шаблона (см. ниже);
 - если нет статического, загружает `*.html`;
-- прогоняет через `_processTemplate` (см. ниже);
+- прогоняет через `_processTemplate`;
 - сохраняет исходный HTML в `this._rawHtml`;
 - вызывает `forceUpdate()` для первой отрисовки.
 
-### Статический шаблон (Static Template)
+### 5.2. Статический шаблон (Static Template)
 
 Чтобы избежать асинхронного запроса `fetch` (который вызывает моргание интерфейса), можно задать шаблон прямо в файле компонента. 
 Рекомендуемый паттерн — объявить переменную `_template` на уровне модуля (вне класса):
@@ -112,11 +168,8 @@ export class MyComponent extends BaseComponent {
 ```
 
 Если этот геттер возвращает строку, `loadTemplate` использует её, и `fetch` не выполняется.
-Экранируйте внутренние переменные как \${this...}
 
----
-
-## 3. Обработка стилей (`_processTemplate`)
+### 5.3. Обработка стилей (`_processTemplate`)
 
 В шаблоне можно писать теги `<style>`:
 - BaseComponent собирает все стили в один блок;
@@ -125,111 +178,23 @@ export class MyComponent extends BaseComponent {
 - вставляет стили **сразу после** этого скрипта;
 - если скрипт не найден, добавляет стили в конец `<head>`.
 
-Эффект:
-- стили компонента подключаются один раз;
-- шаблон остаётся без лишних `<style>` внутри.
+Эффект: стили компонента подключаются один раз, а шаблон остаётся без лишних `<style>` внутри.
+
+### 5.4. Автоматическое исправление путей (`_resolveImagePaths`)
+
+Проблема: в шаблонах компонента удобно писать относительные пути вроде `../img/...`, но после сборки/публикации структура файлов может измениться.
+
+Решение:
+- при `loadTemplate(baseUrl)` сохраняется `this._baseUrl = baseUrl` (обычно `import.meta.url`);
+- после `render()` BaseComponent проходит по всем элементам с `src`;
+- если `src` начинается с `./` или `../`, он переводится в абсолютный URL относительно `this._baseUrl`;
+- для `<img>` обновляется свойство `src`, для остальных элементов — атрибут `src`.
+
+Эффект: относительные пути внутри шаблона компонента остаются рабочими и в dev, и после публикации.
 
 ---
 
-## 4. Регистрация компонентов и глобальное событие готовности
-
-BaseComponent помогает понять, когда **все** компоненты на странице загрузили и обработали свои шаблоны.
-
-Ожидания:
-- все подключения компонентов находятся в `<head>`;
-- каждый `<script>` имеет атрибут `data-wcc` и `type="module"`:
-
-```html
-<script data-wcc type="module" src="components/NavBar/NavBar.js"></script>
-<script data-wcc type="module" src="components/HeaderBlock/HeaderBlock.js"></script>
-```
-
-### 4.1. Новый паттерн регистрации (`registerWcc`)
-
-Рекомендуемый способ регистрации компонента:
-
-```js
-export class HeaderBlock extends BaseComponent {
-  connectedCallback() {
-    this.loadTemplate(import.meta.url);
-  }
-
-  render() {
-    super.render();
-  }
-}
-
-BaseComponent.registerWcc(HeaderBlock, import.meta.url);
-```
-
-Правила:
-- имя класса — в PascalCase, например `HeaderBlock`, `NavBar`;
-- HTML-тег вычисляется автоматически по имени класса через `BaseComponent.toKebab`:
-  - `HeaderBlock` → `header-block`;
-  - `NavBar` → `nav-bar`.
-
-`registerWcc`:
-- валидирует класс (наследуется от `BaseComponent`, корректное имя);
-- строит тег в `kebab-case` и проверяет, что он подходит для custom element;
-- один раз вызывает `customElements.define(tag, ctor)` (с защитой от повторной регистрации);
-- прокидывает тег и `import.meta.url` в `BaseComponent.register`.
-
-### 4.2. Глобальное событие готовности компонентов
-
-Как это работает:
-- когда компонент завершил первую отрисовку (`forceUpdate()`), BaseComponent:
-  - находит свой `<script data-wcc src="...">` по совпадению `src` с `import.meta.url`;
-  - удаляет у него атрибут `data-wcc`;
-- **Новое**: если компонент подключен, но не используется на странице (нет тега в HTML и не используется внутри других компонентов), BaseComponent автоматически помечает его как загруженный (после `DOMContentLoaded`), чтобы не блокировать событие готовности.
-- после этого считает, сколько в `<head>` осталось `<script data-wcc>[src]`.
-- когда таких скриптов не остаётся:
-  - один раз диспатчится событие `wcc:all-components-ready` на `window`.
-
-Подписка в основном JS:
-
-```js
-window.addEventListener('wcc:all-components-ready', () => {
-  console.log('Все компоненты на базе BaseComponent готовы');
-  // здесь безопасно работать с их DOM и API
-});
-```
-
-### 4.3. Хук `onAllComponentsReady` в компонентах
-
-Иногда компоненту нужно выполнить действия, когда **все остальные** компоненты уже отрендерены
-и готовы к взаимодействию (например, найти другие элементы и связать их).
-
-Для этого в наследнике можно определить метод:
-
-```js
-export class HeaderBlock extends BaseComponent {
-  connectedCallback() {
-    this.loadTemplate(import.meta.url);
-  }
-
-  render() {
-    super.render();
-  }
-
-  onAllComponentsReady() {
-    // Здесь можно безопасно работать с другими компонентами
-    // Например, найти соседний компонент и вызвать его публичный метод
-  }
-}
-```
-
-Гарантии:
-- метод вызывается **после первой отрисовки** компонента;
-- вызывается **ровно один раз на экземпляр**;
-- срабатывает как для компонентов, которые были на странице **до**
-  события `wcc:all-components-ready`, так и для добавленных **после** него.
-
-Вам не нужно самостоятельно подписываться на `window.addEventListener('wcc:all-components-ready', ...)` —
-BaseComponent сделает это за вас и вызовет `onAllComponentsReady`, когда всё будет готово.
-
----
-
-## 5. Слоты (default и именованные)
+## 6. Слоты (default и именованные)
 
 BaseComponent поддерживает:
 - стандартный слот без имени: `<slot></slot>`;
@@ -249,10 +214,13 @@ BaseComponent поддерживает:
 
 ---
 
-## 6. Условные блоки в HTML (`_processConditionals`)
+## 7. Синтаксис шаблонов
 
-Поддерживается синтаксис:
+BaseComponent предоставляет несколько расширений стандартного HTML для динамичности.
 
+### 7.1. Условные блоки (`<!-- if(...) -->`)
+
+Синтаксис:
 ```html
 <!-- if(this.isActive) -->
   <div>Пользователь активен</div>
@@ -264,18 +232,43 @@ BaseComponent поддерживает:
 - если условие `true` → блок остаётся;
 - если `false` → блок вырезается.
 
-Назначение:
-- простая логика отображения прямо в HTML-шаблоне;
-- удобно для включения/выключения отдельных секций.
+### 7.2. Блоки include (`<!-- include -->`)
 
----
+Иногда нужно вставить в шаблон кусок HTML, который зависит от свойств компонента, но не хочется писать JS-код.
 
-## 7. Внутренние шаблоны (`innerTemplate`)
+Синтаксис:
+```html
+<!-- include -->
+  <wcc-skill-list skill-list="${this.skillList}"></wcc-skill-list>
+<!-- /include -->
+```
+
+Как работает:
+- BaseComponent ищет пары `<!-- include --> ... <!-- /include -->` в основном шаблоне.
+- Содержимое блока обрабатывается как template literal в контексте текущего компонента (`${this.propName}`).
+- Результат один раз подставляется на место блока.
+
+Ограничения:
+- include обрабатывается только в основном шаблоне (не в `innerTemplate`).
+- include не реактивен (не пересчитывается при изменении свойств).
+- Вложенные include внутри include не поддерживаются (обрабатывается только внешний блок).
+
+Пример использования с JSON-данными:
+Это полезно для передачи сложных данных в атрибуты вложенных компонентов.
+
+```html
+<!-- include -->
+  <wcc-skill-list skill-list="${this.skillList}"></wcc-skill-list>
+<!-- /include -->
+```
+
+BaseComponent выполняет интерполяцию строк (`${this.skillList}`), и вставляет результат в HTML **до** основного парсинга.
+
+### 7.3. Внутренние шаблоны (`innerTemplate`)
 
 Служат для декларативного описания разметки элементов списка внутри шаблона.
 
 Синтаксис в HTML:
-
 ```html
 <!-- innerTemplate:list-item -->
 <div class="user-item">
@@ -288,82 +281,78 @@ BaseComponent поддерживает:
 Поведение:
 - BaseComponent вырезает такие куски из HTML;
 - сохраняет их в `this._innerTemplates[name] = content`;
-- после рендеринга основного HTML вызывает:
-  - `_processInnerTemplates(name, content)` для каждого шаблона.
-
-Наследник может переопределить `_processInnerTemplates`, либо использовать вспомогательные методы (см. следующий раздел).
-
-Ограничения:
-- пока внутренние шаблоны нельзя вкладывать друг в друга;
-- имя шаблона — `([\w-]+)`, то есть буквы/цифры/дефис.
+- после рендеринга основного HTML вызывает `_processInnerTemplates(name, content)` для каждого шаблона.
 
 ---
 
-## 8. `evaluateString` — шаблонные строки из обычного string
+## 8. Работа с событиями
 
-Метод:
+### 8.1. Внутренние события (`emit`, `onRef`)
 
+BaseComponent упрощает генерацию и навешивание событий.
+
+#### `emit(eventName, detail, options?)`
+Вызывает `CustomEvent` на экземпляре компонента.
 ```js
-evaluateString(templateString)
+this.emit('header-block-action', { userName: this.userName });
 ```
 
-Позволяет интерпретировать обычную строку как template literal JS:
-- строка может содержать `${...}`;
-- выражения внутри выполняются в контексте компонента (`this`).
-
-Пример:
-
+#### `onRef(refName, eventType, handler, options?)`
+Навешивает обработчик на элемент из `this._refs[refName]`.
 ```js
-const text = this.evaluateString('Привет, ${this.userName}! Тебе ${this.userAge} лет.');
+_cacheElements() {
+  this._refs = { btn: this.querySelector('.btn') };
+}
+
+_setupEventListeners() {
+  this.onRef('btn', 'click', (e) => { /* ... */ });
+}
 ```
 
-Назначение:
-- использовать шаблонные выражения внутри HTML-шаблонов (`innerTemplate`);
-- генерировать текст на основе текущих свойств компонента.
+### 8.2. Глобальные события (window/document)
 
-Важно:
-- метод использует `new Function`, поэтому строки должны быть из доверенного источника (ваш шаблон, а не пользовательский ввод).
+BaseComponent **не предоставляет** автоматической магии для подписки и отписки от глобальных событий (например, `resize`, `scroll`, `popstate`).
+
+**Правила реализации:**
+Если вашему компоненту нужно слушать **внешние** события, вы **обязаны** вручную реализовать методы жизненного цикла:
+
+1.  **`connectedCallback()`**: Подписываемся (`addEventListener`).
+2.  **`disconnectedCallback()`**: Отписываемся (`removeEventListener`).
+
+```js
+export class WccNavLink extends BaseComponent {
+  constructor() {
+    super();
+    // Привязываем контекст
+    this._handleLocationChange = this._handleLocationChange.bind(this);
+  }
+
+  connectedCallback() {
+    this.loadTemplate(import.meta.url);
+    window.addEventListener('popstate', this._handleLocationChange);
+  }
+
+  disconnectedCallback() {
+    // Обязательно отписываемся!
+    window.removeEventListener('popstate', this._handleLocationChange);
+  }
+
+  _handleLocationChange() { /* ... */ }
+}
+```
 
 ---
 
-## 9. `renderInnerTemplateList` — рендер списков из innerTemplate
+## 9. Вспомогательные методы
 
+### `evaluateString(templateString)`
+Позволяет интерпретировать обычную строку как template literal JS (с `${this...}`).
+```js
+const text = this.evaluateString('Привет, ${this.userName}!');
+```
+
+### `renderInnerTemplateList(items, templateContent, containerOrSelector)`
 Утилитарный метод для типичного сценария «массив данных + innerTemplate → список DOM-элементов».
-
-Сигнатура:
-
-```js
-renderInnerTemplateList(items, templateContent, containerOrSelector)
-```
-
-Параметры:
-- `items` — массив объектов (например, пользователей);
-- `templateContent` — строка из `innerTemplate`;
-- `containerOrSelector`:
-  - либо CSS-селектор контейнера внутри компонента (`'.list-container'`);
-  - либо сам DOM-элемент.
-
-Механика:
-- по селектору/элементу ищется контейнер;
-- контейнер очищается (`innerHTML = ''`);
-- для каждого `item`:
-  - временно устанавливается `this.item = item`;
-  - вызывается `evaluateString(templateContent)`;
-  - полученный HTML вставляется через `insertAdjacentHTML('beforeend', ...)`;
-- после цикла `this.item` удаляется.
-
-Это позволяет писать innerTemplate так:
-
-```html
-<!-- innerTemplate:list-item -->
-<div class="user-item">
-  <strong>${this.item.name}</strong>
-  (<span>${this.item.role}</span>)
-</div>
-<!-- /innerTemplate -->
-```
-
-А в компоненте просто вызывать:
 
 ```js
 _processInnerTemplates(name, content) {
@@ -371,478 +360,74 @@ _processInnerTemplates(name, content) {
     this.renderInnerTemplateList(this.items, content, '.list-container');
   }
 }
-}
+```
 
-customElements.define('my-comp', MyComp);
-// Обязательная регистрация для отслеживания использования
-BaseComponent.register('my-comp', import.meta.url);
+### `_processInnerTemplates(name, content)`
+Хук, который вызывается после основного рендера для каждого innerTemplate. Наследник должен переопределить его для отрисовки списков.
+
+### `calculateFluidValue(minWidth, maxWidth, minVal, maxVal)`
+Метод для вычисления "резиновых" (fluid) значений на основе текущей ширины экрана.
+```js
+const fontSize = this.calculateFluidValue(320, 1200, 16, 24);
 ```
 
 ---
 
-## 10. Обработка внутренних шаблонов: `_processInnerTemplates`
+## 10. Глобальная готовность компонентов
 
-Хук, который вызывается после основного рендера, для каждого innerTemplate:
+BaseComponent помогает понять, когда **все** компоненты на странице загрузили и обработали свои шаблоны.
+
+### Событие `wcc:all-components-ready`
+Диспатчится на `window`, когда все скрипты с атрибутом `data-wcc` завершили инициализацию.
 
 ```js
-_processInnerTemplates(name, content) {
-  // по умолчанию — ничего
-}
-```
-
-Типичный сценарий:
-- перебрать `this._innerTemplates` (BaseComponent делает это автоматически в `forceUpdate`);
-- для нужных `name` вызвать `renderInnerTemplateList` или свою логику.
-
----
-
-## 10. Автоматическое исправление путей (`_resolveImagePaths`)
-
-Проблема:
-- в шаблонах компонента удобно писать относительные пути вроде `../img/...`;
-- после сборки/публикации структура файлов может измениться, и такие пути ломаются.
-
-Решение:
-- при `loadTemplate(baseUrl)` сохраняется `this._baseUrl = baseUrl` (обычно `import.meta.url`);
-- после `render()` BaseComponent проходит по всем элементам с `src`;
-- если `src` начинается с `./` или `../`, он переводится в абсолютный URL относительно `this._baseUrl`;
-- для `<img>` обновляется свойство `src`, для остальных элементов — атрибут `src`.
-
-Эффект:
-- относительные пути внутри шаблона компонента остаются рабочими и в dev, и после публикации.
-
----
-
-## 11. Адаптивные значения (`calculateFluidValue`)
-
-Метод для вычисления "резиновых" (fluid) значений на основе текущей ширины экрана. Использует формулу линейной интерполяции.
-
-Сигнатура:
-
-```js
-calculateFluidValue(minWidth, maxWidth, minVal, maxVal)
-```
-
-Параметры:
-- `minWidth`, `maxWidth` — диапазон ширины экрана (в пикселях);
-- `minVal`, `maxVal` — соответствующие значения свойства (например, font-size).
-
-Возвращает:
-- Число (текущее значение).
-
-Пример использования в компоненте (для адаптивной типографики или отступов):
-
-```js
-_updateResponsiveStyles() {
-  const width = window.innerWidth;
-  // Например, шрифт меняется от 16px до 24px при ширине экрана от 320px до 1200px
-  const fontSize = this.calculateFluidValue(320, 1200, 16, 24);
-  
-  // Можно ограничить (clamp)
-  const clampedSize = Math.max(16, Math.min(24, fontSize));
-  
-  this.style.setProperty('--main-font-size', `${clampedSize}px`);
-}
-
-connectedCallback() {
-  super.connectedCallback(); // если есть
-  this.loadTemplate(import.meta.url);
-  
-  window.addEventListener('resize', () => this._updateResponsiveStyles());
-  this._updateResponsiveStyles();
-}
-```
-
----
-
-## 15. Общий жизненный цикл наследника
-
-Типичный компонент на базе BaseComponent:
-
-1. Описывает свойства через `static get properties`.
-2. В `constructor` инициализирует своё состояние.
-3. В `connectedCallback` вызывает `this.loadTemplate(import.meta.url)`.
-4. Переопределяет `render()`, если нужно:
-   - вызывает `super.render()`;
-   - кэширует ссылки на элементы (`querySelector`, `_cacheElements`);
-   - навешивает обработчики событий (через `_setupEventListeners`, `onRef`, `emit`);
-   - вызывает `updateView()` для заполнения данных.
-5. Переопределяет `propertyChangedCallback`, чтобы реагировать на изменения свойств.
-6. При необходимости:
-   - использует условные блоки `<!-- if(...) -->`;
-   - определяет `innerTemplate` для списков и реализует `_processInnerTemplates`;
-   - использует `renderInnerTemplateList` и `evaluateString`.
-
----
-
-## 15.2 Работа с глобальными событиями (window/document)
-
-BaseComponent **не предоставляет** автоматической магии для подписки и отписки от глобальных событий (например, `resize`, `scroll`, `popstate`, `keydown` на `window` или `document`).
-
-Это сделано намеренно:
-1.  **Принцип ответственности**: Компонент сам должен решать, когда и на что ему подписываться.
-2.  **Избежание утечек памяти**: Автоматическая подписка без понимания контекста может привести к тому, что обработчики останутся висеть после удаления компонента.
-
-### Правила реализации
-
-Если вашему компоненту нужно слушать **внешние** события (вне своего DOM-дерева), вы **обязаны** вручную реализовать методы жизненного цикла:
-
-1.  **`connectedCallback()`**: Подписываемся (`addEventListener`).
-2.  **`disconnectedCallback()`**: Отписываемся (`removeEventListener`).
-
-### Пример (из WccNavLink)
-
-```js
-export class WccNavLink extends BaseComponent {
-  constructor() {
-    super();
-    // Привязываем контекст, чтобы можно было передать ссылку на метод в removeEventListener
-    this._handleLocationChange = this._handleLocationChange.bind(this);
-  }
-
-  connectedCallback() {
-    // 1. Обязательно загружаем шаблон (если используем BaseComponent)
-    this.loadTemplate(import.meta.url);
-    
-    // 2. Подписываемся на глобальные события
-    window.addEventListener('popstate', this._handleLocationChange);
-    window.addEventListener('hashchange', this._handleLocationChange);
-  }
-
-  disconnectedCallback() {
-    // 3. Обязательно отписываемся при удалении компонента!
-    // Если этого не сделать, обработчик останется в памяти браузера,
-    // будет вызываться для несуществующего компонента и вызывать ошибки.
-    window.removeEventListener('popstate', this._handleLocationChange);
-    window.removeEventListener('hashchange', this._handleLocationChange);
-  }
-
-  _handleLocationChange() {
-    // ... реакция на изменение URL
-  }
-}
-```
-
-> **Важно**: Для внутренних событий (например, клик по кнопке *внутри* компонента), которую вы нашли через `this.querySelector`, ручная отписка в `disconnectedCallback` **не требуется**. Браузер сам удалит обработчики вместе с удалением DOM-узла кнопки.
-
----
-
-
-## 13. Блоки include
-
-Иногда нужно вставить в шаблон кусок HTML, который зависит от свойств компонента (`this.*`), но не хочется ради этого писать JS-код в `render()`. Для этого есть блоки `include`.
-
-Синтаксис:
-
-```html
-<!-- include -->
-  <wcc-skill-list skill-list="${this.skillList}"></wcc-skill-list>
-<!-- /include -->
-```
-
-Как работает:
-
-- BaseComponent ищет пары `<!-- include --> ... <!-- /include -->` в основном шаблоне (после извлечения `innerTemplate`).
-- Содержимое блока обрабатывается как template literal в контексте текущего компонента:
-  - доступны `this.propName` и любые выражения вида `${this.propName}`.
-- Результат один раз подставляется на место блока, и дальше этот HTML живёт как обычная разметка.
-
-Ограничения:
-
-- include обрабатывается только в основном шаблоне:
-  - блоки внутри `innerTemplate` не интерпретируются как include;
-  - вложенные include внутри include не поддерживаются (обрабатывается только внешний блок).
-- include не реактивен:
-  - при последующих изменениях свойств блок сам по себе не пересчитывается;
-  - для динамического обновления по-прежнему используйте `propertyChangedCallback` и `updateView`.
-
-Пример использования с дочерним компонентом:
-
-```html
-<!-- include -->
-  <wcc-skill-list skill-list="${this.skillList}"></wcc-skill-list>
-<!-- /include -->
-```
-
-Как работает:
-- BaseComponent находит блоки `<!-- include -->`;
-- выполняет интерполяцию строк внутри (`${this.skillList}`);
-- вставляет результат в HTML **до** основного парсинга и рендеринга.
-
-Это полезно для передачи сложных данных (JSON-строк) в атрибуты вложенных компонентов.
-
----
-
-## 14. События: `emit` и `onRef`
-
-BaseComponent упрощает генерацию и навешивание событий.
-
-### `emit(eventName, detail, options?)`
-
-- Вызывает `CustomEvent` на экземпляре компонента:
-  - `eventName` — имя события;
-  - `detail` — произвольный объект с данными;
-  - `options` (необязательный):
-    - `bubbles` (по умолчанию `true`);
-    - `composed` (по умолчанию `true`).
-
-Пример:
-
-```js
-this.emit('header-block-action', {
-  userName: this.userName,
-  userAge: this.userAge,
-  isMale: this.isMale,
-  component: this
+window.addEventListener('wcc:all-components-ready', () => {
+  console.log('Все компоненты готовы');
 });
 ```
 
-### `onRef(refName, eventType, handler, options?)`
-
-- Навешивает обработчик на элемент из `this._refs[refName]`:
-  - если `this._refs` или сам элемент отсутствуют — ничего не делает;
-  - иначе вызывает `addEventListener(eventType, handler, options)`.
-
-Типичный рецепт:
+### Хук `onAllComponentsReady`
+В компоненте можно определить этот метод, чтобы выполнить действия, когда все остальные компоненты готовы.
 
 ```js
-_cacheElements() {
-  this._refs = {
-    btn: this.querySelector('.header-block__btn')
-  };
-}
-
-_setupEventListeners() {
-  this.onRef('btn', 'click', (e) => {
-    this.emit('header-block-action', {
-      userName: this.userName,
-      userAge: this.userAge,
-      isMale: this.isMale,
-      component: this,
-      event: e,
-    });
-  });
+onAllComponentsReady() {
+  // Безопасно работать с другими компонентами
 }
 ```
-
-Так наследник описывает только бизнес-логику (какое событие и какие данные), не заботясь о `CustomEvent`, `bubbles/composed` и проверке наличия элемента.
-
-Так BaseComponent берёт на себя инфраструктуру (шаблоны, стили, свойства, слоты, условные блоки, списки), а наследник концентрируется на бизнес-логике и данных.
+Гарантируется вызов ровно один раз на экземпляр, после первой отрисовки.
 
 ---
 
-## 15. Интеграция с фреймворками (React, Vue, и др.)
+## 11. Интеграция с фреймворками
 
 ### Vue
-Vue (особенно версии 3) имеет отличную поддержку Web Components.
-- Атрибуты с дефисом (kebab-case) передаются как атрибуты.
-- Свойства (props) можно передавать через `.prop` модификатор (например, `:user-data.prop="data"`), если компонент ожидает сложный объект, а не строку.
-- События слушаются стандартно через `@custom-event`.
+Vue имеет отличную поддержку Web Components.
+- Атрибуты с дефисом передаются как атрибуты.
+- Свойства (props) можно передавать через `.prop` модификатор.
+- События слушаются через `@custom-event`.
 
 ### React (версии 18 и ниже)
-React до версии 19 имеет известные ограничения при работе с Custom Elements:
-1. Он передает все данные как атрибуты (строки), а не свойства. Это ломает передачу сложных объектов (массивов, объектов).
-2. Он не умеет автоматически вешать слушатели на кастомные события (CustomEvent).
-
-Для решения этих проблем рекомендуется создавать **React-обертку (Wrapper)**.
-
-#### Пример универсального Wrapper для React
-
-```jsx
-// WccWrapper.jsx
-import React, { useRef, useEffect } from 'react';
-
-/**
- * Универсальная обертка для Web Components в React.
- * Позволяет:
- * 1. Передавать сложные данные (массивы, объекты) через свойства (ref).
- * 2. Слушать кастомные события (addEventListener).
- * 
- * @param {string} component - Имя тега веб-компонента (например, 'wcc-input')
- * @param {object} props - Свойства, которые нужно передать
- * @param {object} events - Объект с колбэками событий { 'change': handleChange }
- * @param {object} rest - Остальные пропсы (className, style и т.д.)
- */
-const WccWrapper = ({ component: TagName, props = {}, events = {}, ...rest }) => {
-  const ref = useRef(null);
-
-  // Синхронизация свойств (Props)
-  useEffect(() => {
-    if (ref.current) {
-      Object.entries(props).forEach(([key, value]) => {
-        // Устанавливаем свойство напрямую в DOM-элемент
-        ref.current[key] = value;
-      });
-    }
-  }, [props]); // Обновляем при изменении пропсов
-
-  // Подписка на события (Events)
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    // Массив для хранения отписок
-    const cleanupFns = [];
-
-    Object.entries(events).forEach(([eventName, callback]) => {
-      // Обертка для сохранения контекста React (если нужно)
-      const handler = (e) => callback(e);
-      element.addEventListener(eventName, handler);
-      cleanupFns.push(() => element.removeEventListener(eventName, handler));
-    });
-
-    return () => {
-      cleanupFns.forEach((fn) => fn());
-    };
-  }, [events]); // Обновляем слушатели, если изменился объект events
-
-  // Рендерим сам веб-компонент
-  // children передаются внутрь слота
-  return <TagName ref={ref} {...rest} />;
-};
-
-export default WccWrapper;
-```
-
-#### Использование в React компоненте
-
-```jsx
-import WccWrapper from './WccWrapper';
-
-function App() {
-  const handleInput = (e) => {
-    console.log('Input changed:', e.detail);
-  };
-
-  const skillList = [
-    { name: 'HTML', level: 'Expert' },
-    { name: 'CSS', level: 'Advanced' }
-  ];
-
-  return (
-    <div>
-      <h1>Web Components in React</h1>
-      
-      {/* Простой пример */}
-      <WccWrapper 
-        component="wcc-input" 
-        props={{ label: 'Username', value: 'JohnDoe' }}
-        events={{ 'input': handleInput }}
-      />
-
-      {/* Передача сложного объекта (массива) */}
-      <WccWrapper
-        component="wcc-skill-list"
-        props={{ items: skillList }} // items - это сеттер в веб-компоненте
-      />
-    </div>
-  );
-}
-```
+React имеет ограничения (все передается как строковые атрибуты, нет авто-подписки на CustomEvent).
+Рекомендуется использовать **React-Wrapper** (см. пример в разделе 15 исходного дока или файл `useInReact.DOC.md`), который вручную синхронизирует пропсы и вешает слушатели событий.
 
 ### React 19+
-В React 19 заявлена полная поддержка Custom Elements, поэтому Wrapper может не понадобиться, и можно будет писать просто `<wcc-input items={list} onchange={handler} />`.
+В React 19 заявлена полная поддержка Custom Elements, Wrapper может не понадобиться.
 
 ---
 
-## 16. Диагностика и решение проблем
+## 12. Оптимизация и Продакшен
 
-BaseComponent выводит в консоль предупреждения и ошибки, чтобы помочь обнаружить проблемы с конфигурацией компонентов.
+### 12.1. Минификация
+Скрипт `wcc/base/minify.js` удаляет комментарии и пробелы из `BaseComponent.js`.
+Запуск: `node wcc/base/minify.js`.
+Подключение: `<script type="module" src="wcc/base/BaseComponent.min.js"></script>`.
 
-### Предупреждения (Warnings)
+### 12.2. Встраивание шаблонов (Inline Templates)
+Скрипт `wcc/base/inline-templates.js` переносит содержимое `.html` файлов внутрь `.js` файлов в переменную `myTemplate`.
+- Встраивание: `node wcc/base/inline-templates.js`
+- Очистка (dev режим): `node wcc/base/inline-templates.js --clear`
 
-| Сообщение | Причина | Решение |
-| --- | --- | --- |
-| `Property "..." type Boolean has default: true...` | Boolean свойство имеет `default: true`. Это запрещено, так как Boolean атрибут работает по принципу "есть/нет". Если он есть по умолчанию, его нельзя "выключить" через HTML (отсутствие атрибута = false). | Установите `default: false` для Boolean свойств. Инвертируйте логику имени (например, вместо `isVisible` используйте `isHidden`), если нужно значение true по умолчанию. |
-| `tag already defined, skipping define` | Попытка зарегистрировать компонент с тегом, который уже существует. | Обычно это безопасно (например, при Hot Module Replacement). Убедитесь, что вы не пытаетесь зарегистрировать два разных класса под одним тегом. |
-| `Duplicate script import detected for ...` | Один и тот же скрипт подключен на странице несколько раз. | Проверьте HTML и удалите дублирующиеся теги `<script>`. BaseComponent автоматически игнорирует дубликаты. |
-| `Незарегистрированный компонент: ...` | (Только localhost) На странице найден тег с дефисом, который не был зарегистрирован как Custom Element. | Возможно, вы забыли подключить скрипт компонента или вызвать `BaseComponent.registerWcc`. Или это опечатка в HTML. |
-
-### Ошибки (Errors)
-
-| Сообщение | Причина | Решение |
-| --- | --- | --- |
-| `Ошибка загрузки шаблона ...` | Не удалось загрузить файл `.html`. | Проверьте, что файл шаблона лежит в той же папке, что и `.js`, и имеет то же имя (например, `MyComp.html` для `MyComp.js`). |
-| `registerWcc: ...` (ошибки валидации) | Некорректные аргументы при регистрации компонента. | Проверьте вызов `registerWcc(Class, import.meta.url)`. Имя класса должно быть в PascalCase (MyComponent), URL должен быть передан. |
-| `registerWcc: custom element tag must contain a dash` | Имя класса состоит из одного слова (например, `Button`). | Спецификация Custom Elements требует дефис в имени тега. Переименуйте класс в `WccButton` или `AppButton`. |
-| `onAllComponentsReady error` | Исключение внутри вашего метода `onAllComponentsReady`. | Проверьте код метода `onAllComponentsReady` в указанном компоненте. |
-
----
-
-## 17. Минификация (Minification)
-
-Для использования в продакшене (production) рекомендуется использовать минифицированную версию библиотеки, чтобы уменьшить размер загружаемых файлов.
-
-В папке `wcc/base/` находится скрипт `minify.js`, который генерирует оптимизированную версию `BaseComponent.min.js`.
-
-### Как создать минифицированную версию
-
-Запустите скрипт через Node.js из корня проекта:
-
-```bash
-node wcc/base/minify.js
-```
-
-Скрипт:
-1. Читает исходный `BaseComponent.js`.
-2. Удаляет все комментарии (однострочные и многострочные).
-3. Удаляет лишние пробелы и переносы строк.
-4. Сохраняет результат в `BaseComponent.min.js`.
-
-### Использование
-
-В HTML файле для продакшена подключайте минифицированную версию:
-
-```html
-<script type="module" src="wcc/base/BaseComponent.min.js"></script>
-```
-
-Это обеспечит быструю загрузку базового функционала для ваших веб-компонентов.
-
-## 18. Встраивание шаблонов (Inline Templates)
-
-Для подготовки компонентов к продакшену (production) можно использовать скрипт `inline-templates.js`, который переносит содержимое HTML-файлов прямо в JS-файлы компонентов.
-
-Это позволяет:
-- Уменьшить количество HTTP-запросов (не нужно отдельно загружать `.html` файлы).
-- Избежать задержек при первом рендеринге ("моргания").
-- Упростить распространение компонентов (один JS файл вместо пары JS+HTML).
-
-### Расположение скрипта
-
-Скрипт находится в папке базы: `wcc/base/inline-templates.js`.
-
-### Использование
-
-1. **Встраивание шаблонов (Inline)**
-   Эта команда рекурсивно найдет все компоненты в проекте, прочитает их `.html` файлы и вставит содержимое в переменную `myTemplate` внутри `.js` файлов.
-
-   ```bash
-   node wcc/base/inline-templates.js
-   ```
-
-   *Пример результата в JS:*
-   ```js
-   const myTemplate = `<style>...</style><div>Content</div>`; 
-   // ...
-   BaseComponent.registerWcc(MyComp, import.meta.url, myTemplate);
-   ```
-
-2. **Очистка шаблонов (Clear)**
-   Эта команда вернет компоненты в режим разработки (development), очистив переменную `myTemplate`. Компоненты снова будут загружать свои шаблоны из внешних `.html` файлов.
-
-   ```bash
-   node wcc/base/inline-templates.js --clear
-   ```
-
-   *Пример результата в JS:*
-   ```js
-   const myTemplate = ``; 
-   // ...
-   ```
-
-### Требования к структуре и коду
-
+#### Требования к структуре и коду
 Чтобы скрипт обработал компонент, должны соблюдаться следующие условия:
 
 1. **Структура файлов**:
@@ -863,46 +448,23 @@ const myTemplate = ``; // или заполненная строка
 
 Скрипт автоматически экранирует специальные символы (обратные кавычки, `${...}`), чтобы код шаблона оставался строкой и не исполнялся раньше времени.
 
+### 12.3. Управление версиями (Versioning)
+Скрипт `wcc/base/update-versions.js` добавляет параметр `?v=YYMMDD` к подключению скриптов для сброса кэша браузера.
+- Обновление: `node wcc/base/update-versions.js index.html`
+- Очистка: `node wcc/base/update-versions.js index.html --clear`
+
 ---
 
-## 19. Управление версиями (Versioning)
+## 13. Диагностика и решение проблем
 
-Для решения проблемы кеширования скриптов в браузере (cache busting) используется скрипт `update-versions.js`. Он добавляет или обновляет параметр версии (`?v=...`) при подключении скриптов компонентов в HTML.
+BaseComponent выводит в консоль предупреждения и ошибки.
 
-### Расположение скрипта
+### Частые проблемы
 
-Скрипт находится в папке базы: `wcc/base/update-versions.js`.
-
-### Использование
-
-1. **Обновление версий**
-   Добавляет текущую дату в формате `YYMMDD` (например, `0260207` для 2026-02-07) к путям скриптов.
-
-   ```bash
-   node wcc/base/update-versions.js index.html
-   ```
-
-   *Результат:*
-   ```html
-   <script src="wcc/base/BaseComponent.js?v=0260207"></script>
-   ```
-
-2. **Очистка версий (--clear)**
-   Удаляет параметры версий.
-
-   ```bash
-   node wcc/base/update-versions.js index.html --clear
-   ```
-
-   *Результат:*
-   ```html
-   <script src="wcc/base/BaseComponent.js"></script>
-   ```
-
-### Особенности работы
-
-Скрипт обрабатывает **только** файлы, относящиеся к WCC-компонентам:
-- `wcc/base/BaseComponent.js`
-- Компоненты, путь к которым содержит директорию, начинающуюся с `wcc` (например, `wcc/`, `wcc-sections/`, `wcc-ui/`), и имя файла совпадает с именем родительской папки (например, `wcc-sections/Header/Header.js`).
-
-Обычные скрипты (например, `js/main.js`) игнорируются.
+| Сообщение | Решение |
+| --- | --- |
+| `Property "..." type Boolean has default: true...` | Установите `default: false`. Boolean атрибут работает по принципу "есть/нет". |
+| `tag already defined, skipping define` | Безопасно (обычно при HMR). |
+| `Duplicate script import detected` | Удалите дублирующиеся теги `<script>` в HTML. |
+| `Ошибка загрузки шаблона ...` | Проверьте имя и расположение `.html` файла. |
+| `registerWcc: custom element tag must contain a dash` | Переименуйте класс в PascalCase (например, `WccButton`), чтобы в теге был дефис (`wcc-button`). |
