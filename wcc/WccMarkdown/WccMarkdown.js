@@ -50,6 +50,11 @@ export class WccMarkdown extends BaseComponent {
             this.scrollIntoView({behavior: 'smooth', block: 'start'});
           }, 100);
         }
+      } else {
+        // If hash does not match (e.g. user pressed Back button), collapse the component
+        if (this.expanded) {
+          this.expanded = false;
+        }
       }
     }
   }
@@ -60,6 +65,15 @@ export class WccMarkdown extends BaseComponent {
       this.loadMarkdown(newValue);
     }
     if (name === 'expanded') {
+      if (newValue) {
+        if (this.id && window.location.hash !== '#' + this.id) {
+          window.location.hash = this.id;
+        }
+      } else {
+        if (this.id && window.location.hash === '#' + this.id) {
+          history.replaceState(null, null, window.location.pathname + window.location.search);
+        }
+      }
       this.forceUpdate();
     }
   }
