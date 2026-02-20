@@ -5,6 +5,7 @@ export class WccHashRoute extends BaseComponent {
   constructor() {
     super();
     this._handleLocationChange = this._handleLocationChange.bind(this);
+    this._lastPath = '/';
   }
 
   connectedCallback() {
@@ -36,9 +37,13 @@ export class WccHashRoute extends BaseComponent {
     } else {
       path = window.location.pathname || '/';
       path = path.replace(/index\.html$/, '') || '/';
+      if (path === '/' && this._lastPath && this._lastPath !== '/') {
+        path = this._lastPath;
+      }
     }
 
-    return path || '/';
+    this._lastPath = path || '/';
+    return this._lastPath;
   }
 
   // Сопоставляет шаблон маршрута (route) с текущим путём (path).
