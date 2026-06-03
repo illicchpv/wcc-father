@@ -60,11 +60,6 @@ export class WccHashRoute extends BaseComponent {
       // Fallback на pathname: полезно для сценариев без hash (или при прямом заходе на страницу)
       path = window.location.pathname || '/';
       path = path.replace(/index\.html$/, '') || '/';
-      if (path === '/' && this._lastPath && this._lastPath !== '/') {
-        // Если оказались на '/', но ранее уже был другой путь — сохраняем «последний известный».
-        // Это сглаживает кейсы, когда браузер/сервер редиректит на корень, а роутер должен остаться на прежнем.
-        path = this._lastPath;
-      }
     }
 
     // Отсекаем query params, чтобы получить чистый путь для роутинга
