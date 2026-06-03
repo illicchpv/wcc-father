@@ -3,6 +3,7 @@
 [github](https://github.com/illicchpv/wcc-father)
 [github page](https://illicchpv.github.io/wcc-father/)
 
+
 - .vscode\wcc.code-snippets - сниппеты для VSCode
 - wcc\base\BaseComponent.DOC.md - документация к BaseComponent
 - wcc\base\BaseComponent.DOCshort.md - краткая документация к BaseComponent

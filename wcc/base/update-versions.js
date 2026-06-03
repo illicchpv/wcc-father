@@ -1,3 +1,7 @@
+// добавляет параметр `?v=YYMMDD` к подключению скриптов для сброса кэша браузера.
+// Обновление: `node wcc/base/update-versions.js index.html`
+// Очистка: `node wcc/base/update-versions.js index.html --clear`
+
 const fs = require('fs');
 const path = require('path');
 

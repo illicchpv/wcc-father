@@ -1,3 +1,7 @@
+// использование:
+// node wcc/base/inline-templates.js
+// node wcc/base/inline-templates.js --clear
+
 const fs = require('fs');
 const path = require('path');
 
