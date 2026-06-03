@@ -4,10 +4,11 @@
 
 Компонент:
 - слушает изменения адреса (`hashchange`, `popstate`);
-- вычисляет текущий путь;
-- выбирает подходящего ребёнка по шаблону `route`;
-- добавляет активному элементу атрибут `route-param` с параметрами маршрута;
-- генерирует событие `route-change`.
+- вычисляет текущий путь и параметры запроса (query params);
+- выбирает подходящего ребёнка по шаблону `route` (игнорируя query params);
+- добавляет активному элементу атрибут `route-param` (значения `*` или остаток префикса);
+- генерирует событие `wcc:routechange` с передачей пути, query params и активного элемента;
+- предоставляет API для программной навигации (`setRoute`) и работы с query (`setQueryParams` и др.).
 
 ---
 
@@ -32,10 +33,11 @@
 
 ```html
 <nav>
-  <a href="#/">Home</a>
-  <a href="#/doc">Doc</a>
-  <a href="#/doc-short">Doc short</a>
-  <a href="#/doc-short/main">Doc main</a>
+  <!-- только ссылки с атрибутом route-link участвуют в подсветке active -->
+  <a route-link href="#/">Home</a>
+  <a route-link href="#/doc">Doc</a>
+  <a route-link href="#/doc-short">Doc short</a>
+  <a route-link href="#/doc-short/main">Doc main</a>
 </nav>
 
 <wcc-hash-route>
@@ -67,7 +69,7 @@
 
 Навигация:
 - по hash: ссылки вида `href="#/doc"`;
-- по пути: ссылки вида `href="/doc"` + логика `pushState` / настройка сервера (опционально).
+- по пути: ссылки вида `href="/doc"` (это будет обычная навигация браузера, если отдельно не реализовать `pushState`).
 
 ---
 
@@ -101,7 +103,7 @@ HTML шаблон (light DOM) выглядит так:
 - `route` — строковый шаблон маршрута.
   - Примеры:
     - `route="/"` — строго корень;
-    - `route="/doc"` — строго `/doc`;
+    - `route="/doc"` — точное совпадение с `/doc` и префиксное с `/doc/...`;
     - `route="/doc-short*"` — `/doc-short` + любой хвост без `/`;
     - `route="/doc-short*/main*"` — две звёздочки, разделённые `/`.
   - Символ `*` соответствует любым символам, кроме `/` (может быть пустой строкой).
@@ -111,7 +113,28 @@ HTML шаблон (light DOM) выглядит так:
 
 - `route-param` — атрибут, который `WccHashRoute` ставит активному элементу:
   - содержит значения всех `*`, склеенные через `/`;
-  - если звёздочек нет или они пустые — `route-param=""` или атрибут не создаётся.
+  - для статических маршрутов (без `*`) атрибут удаляется;
+  - для префиксного совпадения статического маршрута атрибут содержит остаток пути;
+  - если `*` совпали с пустой строкой, атрибут будет `route-param=""`.
+
+- `onRouteEnter({path, routeParam, queryParams})` — необязательный метод на дочернем элементе:
+  - если активный элемент реализует этот метод, `WccHashRoute` вызовет его
+    при смене активного маршрута или изменении query-параметров;
+  - маршрут считается изменившимся, если поменялись:
+    - активный элемент;
+    - `path`;
+    - `routeParam`;
+    - `queryParams` (даже если путь остался тем же);
+    - факт наличия/отсутствия самого метода;
+  - это удобно для подгрузки данных и управления состоянием:
+    `onRouteEnter({path, routeParam, queryParams}) { /* fetch + render */ }`.
+
+- Ссылки навигации:
+  - в подсветке активной ссылки участвуют только те `<a>`, у которых есть
+    атрибут `route-link`;
+  - роутер находит все такие ссылки с `href`, начинающимся с `#/` или `/`,
+    вычисляет для каждой «вес» совпадения с текущим путём и добавляет класс
+    `active` только лучшему совпадению.
 
 ---
 
@@ -138,16 +161,20 @@ HTML шаблон (light DOM) выглядит так:
 
 1. Если `route === '*'` — запоминает как fallback.
 2. Иначе вызывает `_matchRoutePattern(route, path)`:
-   - если `route` **без `*`**:
-     - совпадение только при полном равенстве строк;
-     - при успехе возвращается:
-       - `score = 10000 + route.length` (приоритет точных совпадений);
+   - если `route` **без `*`**, есть два варианта совпадения:
+     - точное совпадение: `route === path`
+       - `score = 10000 + route.length` (точное совпадение всегда выше любых префиксов/шаблонов);
+       - `route-param` не выставляется;
+     - префиксное совпадение:
+       - для `route === '/'`: совпадает с любым путём вида `'/...'` (кроме `'/'`), а в `route-param` кладётся путь без ведущего `/`;
+       - для остальных: если `path` начинается с `route + '/'`, то совпадение считается успешным, а в `route-param` кладётся остаток пути после `route + '/'`.
+       - `score = route.length` (чем длиннее префикс, тем выше приоритет);
    - если `route` содержит `*`:
      - `*` заменяется на группу `([^/]*)` (любой текст без `/`);
      - строится регулярка вида `^/doc-short([^/]*)/main([^/]*)$`;
      - при совпадении:
        - `score = количество фиксированных символов` (чем их больше, тем приоритет выше);
-       - `starValues = массив захваченных значений звёздочек`.
+       - `starValues = массив захваченных значений звёздочек` (они склеиваются через `/` в `route-param`).
 
 3. Среди всех совпавших маршрутов выбирается:
    - маршрут с максимальным `score`;
@@ -178,23 +205,31 @@ HTML шаблон (light DOM) выглядит так:
 
 ---
 
-## 8. Событие `route-change`
+## 8. Событие `wcc:routechange`
 
 После каждого успешного обновления активного ребёнка `WccHashRoute` генерирует событие:
 
 ```js
-this.emit('route-change', {
-  path,
-  activeElement: active || null,
-});
+this.dispatchEvent(new CustomEvent('wcc:routechange', {
+  detail: {
+    path,
+    activeElement: active || null,
+    params: new URLSearchParams(/* текущие query params */),
+    source: null
+  },
+  bubbles: true,
+  composed: true
+}));
 ```
 
 Подписка снаружи:
 
 ```js
 const router = document.querySelector('wcc-hash-route');
-router.addEventListener('route-change', (e) => {
+router.addEventListener('wcc:routechange', (e) => {
   console.log('current path:', e.detail.path);
+  console.log('query params:', e.detail.params.toString());
+  console.log('tb_tab:', e.detail.params.get('tb_tab'));
   console.log('active element:', e.detail.activeElement);
 });
 ```
@@ -204,18 +239,32 @@ router.addEventListener('route-change', (e) => {
 - синхронизировать состояние приложения с текущим роутом;
 - реагировать на выбор конкретного `route`.
 
+### 8.1. Поле `source` (кто инициировал изменение)
+
+Методы, которые меняют query (`setQueryParams`, `replaceQueryParams`, `clearQueryParams`, `setQueryParam`), принимают `options.source`.
+
+Если указать `source`, то в следующем событии `wcc:routechange` поле `detail.source` будет равно этому значению. Это удобно, чтобы слушатели могли игнорировать «свои» изменения.
+
+Дополнительно есть хелпер:
+
+```js
+router.addEventListener('wcc:routechange', (e) => {
+  if (!router.shouldHandleRouteChange(e, someComponent)) return;
+  // обработка
+});
+```
+
 ---
 
 ## 9. Ограничения и заметки
 
 - Компонент ориентирован на простые SPA‑кейсы:
-  - нет вложенных роутов;
+  - нет полноценной вложенной маршрутизации как в больших роутерах (но есть префиксные совпадения);
   - нет динамического добавления/удаления маршрутов во время работы (возможны, но нужно аккуратно).
 - Совместим как с hash‑роутингом, так и с path‑роутингом:
   - hash‑вариант работает из коробки;
-  - для path‑варианта нужны:
-    - `history.pushState` / `replaceState` для навигации;
-    - сервер, возвращающий `index.html` для любых путей.
+  - path‑вариант поддерживается в части чтения `window.location.pathname`, если hash не начинается с `#/`;
+  - сам роутер не перехватывает клики по ссылкам `href="/..."` и не делает `pushState` — это нужно реализовать отдельно (и настроить сервер, чтобы отдавал `index.html` для любых путей).
 
 ---
 
@@ -235,7 +284,8 @@ router.addEventListener('route-change', (e) => {
 </wcc-hash-route>
 ```
 
-- `/users` → строго список;
+- `/users` → список;
+- `/users/42` → тоже попадёт в `route="/users"` (префиксное совпадение), `route-param="42"`;
 - `/user42`, `/user_abc` → попадают в `route="/user*"`;
 - в `route-param` придёт хвост после `/user` (например, `42`).
 
@@ -311,6 +361,7 @@ router.addEventListener('route-change', (e) => {
 ```
 
 - Любой путь, не совпавший с `/` или `/about`, попадёт в `route="*"`.
+- `/about/team` попадёт в `route="/about"` (префиксное совпадение), `route-param="team"`.
 
 ### 10.5. Параметры маршрута через `route-param`
 
@@ -338,3 +389,94 @@ const params = host?.getAttribute('route-param') || '';
 ```
 
 Дальше — самостоятельно распарсить строку по `/` и использовать значения.
+
+### 10.6. Префиксное совпадение для статических маршрутов
+
+Статический маршрут без `*` может совпадать не только точно, но и как префикс:
+- `route="/doc"` совпадает с `path="/doc/intro"` (но не с `"/docintro"`);
+- `route="/"` совпадает с любым путём вида `"/..."` (кроме точного `"/"`).
+
+Пример:
+
+```html
+<wcc-hash-route>
+  <div route="/doc">
+    <doc-page></doc-page>
+  </div>
+
+  <div route="*">
+    <p>404</p>
+  </div>
+</wcc-hash-route>
+```
+
+Пути и `route-param`:
+- `#/doc` → точное совпадение, `route-param` не выставляется;
+- `#/doc/intro` → префиксное совпадение, `route-param="intro"`;
+- `#/doc/intro/chapter-1` → `route-param="intro/chapter-1"`;
+- `#/anything` (если нет других совпадений) → сработает `route="/"`, `route-param="anything"`.
+
+Использование в компоненте через `onRouteEnter`:
+
+```js
+onRouteEnter({ routeParam }) {
+  const tail = routeParam || '';
+  // tail: "" | "intro" | "intro/chapter-1"
+}
+```
+
+---
+
+## 11. Программная навигация и query API
+
+Для перехода на другой маршрут из JavaScript можно использовать два способа:
+
+### 11.1. Через `window.location.hash` (стандартный способ)
+
+```javascript
+// Переход на страницу пользователей
+window.location.hash = '#/users';
+
+// С параметрами (нужно самому собирать строку)
+window.location.hash = '#/users?sort=desc';
+```
+
+### 11.2. Через метод `setRoute` (удобный способ)
+
+Роутер предоставляет метод `setRoute(path, queryParams)`, который сам формирует корректный hash.
+
+```javascript
+const router = document.querySelector('wcc-hash-route');
+
+// Просто переход
+router.setRoute('/users');
+
+// Переход с параметрами
+router.setRoute('/users', { sort: 'desc', page: 1 });
+// URL станет #/users?sort=desc&page=1
+```
+
+### 11.3. Чтение текущего состояния
+
+```js
+const router = document.querySelector('wcc-hash-route');
+
+router.getQueryParams();       // { sort: "desc", page: "1" }
+router.getQueryParam('page');  // "1" или null
+router.getRouteState();        // { path: "/users", params: URLSearchParams }
+```
+
+### 11.4. Обновление query без смены пути
+
+```js
+router.setQueryParam('page', 2);
+router.setQueryParams({ page: 2, sort: 'asc' });
+router.setQueryParams({ page: null }); // удаление параметра
+
+router.replaceQueryParams({ page: 1 }); // полностью заменить query
+router.clearQueryParams();              // удалить все query
+```
+
+`options` (опционально):
+- `mode: 'push' | 'replace'` — как менять историю (`replace` не создаёт запись в history);
+- `source: any` — попадёт в `e.detail.source` следующего `wcc:routechange`.
