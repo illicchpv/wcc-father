@@ -130,6 +130,16 @@
     ],
     "description": "Min0 класс компонента BaseComponent"
   },
+  "WCC Route Enter": {
+    "prefix": "wcc=route-enter",
+    "scope": "javascript",
+    "body": [
+      "onRouteEnter({path, routeParam}) {",
+      "  // this._render...",
+      "}"
+    ],
+    "description": "Обработка смены маршрута"
+  },
   "WCC catch wcc-event": {
     "prefix": "wcc=catch-event",
     "scope": "javascript",
