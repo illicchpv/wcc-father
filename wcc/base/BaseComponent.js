@@ -353,6 +353,9 @@ export class BaseComponent extends HTMLElement {
     if (!registry.scripts[url]) {
       registry.scripts[url] = {used: false};
     }
+    if (tagName && !registry.tags[url]) {
+      registry.tags[url] = tagName;
+    }
 
     if (!registry.scheduled) {
       registry.scheduled = true;
@@ -362,6 +365,11 @@ export class BaseComponent extends HTMLElement {
         Object.keys(current.scripts).forEach(key => {
           const info = current.scripts[key];
           if (!info.used) {
+            const tag = current.tags ? current.tags[key] : null;
+            if (tag && document.querySelector(tag)) {
+              info.used = true;
+              return;
+            }
             BaseComponent.markLoaded(key);
           }
         });
@@ -373,6 +381,54 @@ export class BaseComponent extends HTMLElement {
         window.addEventListener('load', run, {once: true});
       }
     }
+  }
+
+  static _scheduleAllComponentsReadyDispatch() {
+    if (window.__wccAllComponentsReadyDispatched) return;
+    if (window.__wccAllComponentsReadyScheduled) return;
+    window.__wccAllComponentsReadyScheduled = true;
+
+    const startedAt = Date.now();
+    const timeoutMs = 10000;
+
+    const tick = () => {
+      const now = Date.now();
+      const instances = BaseComponent._instances ? Array.from(BaseComponent._instances) : [];
+      const pending = instances.filter(inst => {
+        if (!inst) return false;
+        if (!inst.isConnected) return false;
+        if (!inst.constructor || !inst.constructor._baseUrl) return false;
+        return !inst._hasRendered;
+      });
+
+      if (pending.length === 0) {
+        window.__wccAllComponentsReadyDispatched = true;
+        window.__wccAllComponentsReadyScheduled = false;
+        const event = new CustomEvent('wcc:all-components-ready');
+        BaseComponent._allComponentsReady = true;
+        BaseComponent._notifyAllComponentsReady();
+        window.dispatchEvent(event);
+        return;
+      }
+
+      if (now - startedAt >= timeoutMs) {
+        try {
+          const tags = pending.map(p => (p && p.tagName ? p.tagName.toLowerCase() : 'unknown'));
+          console.warn('[BaseComponent] wcc:all-components-ready timeout, pending:', Array.from(new Set(tags)));
+        } catch { }
+        window.__wccAllComponentsReadyDispatched = true;
+        window.__wccAllComponentsReadyScheduled = false;
+        const event = new CustomEvent('wcc:all-components-ready');
+        BaseComponent._allComponentsReady = true;
+        BaseComponent._notifyAllComponentsReady();
+        window.dispatchEvent(event);
+        return;
+      }
+
+      setTimeout(tick, 20);
+    };
+
+    setTimeout(tick, 10);
   }
 
   static _registerInstance(instance) {
@@ -497,32 +553,13 @@ export class BaseComponent extends HTMLElement {
     const remaining = document.head.querySelectorAll('script[data-wcc][src]').length;
 
     if (remaining === 0) {
-      if (!window.__wccAllComponentsReadyDispatched) {
-        window.__wccAllComponentsReadyDispatched = true;
-        const event = new CustomEvent('wcc:all-components-ready');
-        setTimeout(() => {
-          try {
-            if (typeof location !== 'undefined' && location.hostname && location.hostname.includes('local')) {
-              const allTags = Array.from(document.querySelectorAll('*')).map(e => e.tagName.toLowerCase());
-              const uniqueTags = Array.from(new Set(allTags));
-              uniqueTags
-                .filter(t => t.includes('-') && !customElements.get(t))
-                .forEach(t => console.warn(`Незарегистрированный компонент: ${t}`));
-            }
-          } catch (e) {
-            console.error('[BaseComponent] error while checking unregistered components', e);
-          }
-          BaseComponent._allComponentsReady = true;
-          BaseComponent._notifyAllComponentsReady();
-          window.dispatchEvent(event);
-        }, 10);
-      }
+      BaseComponent._scheduleAllComponentsReadyDispatch();
     }
   }
 
   static _ensureRegistry() {
     if (!BaseComponent._registry) {
-      BaseComponent._registry = {scripts: {}, scheduled: false};
+      BaseComponent._registry = {scripts: {}, tags: {}, scheduled: false};
     }
     return BaseComponent._registry;
   }
